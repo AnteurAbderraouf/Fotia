@@ -1,0 +1,15 @@
+# Theme sombre, pour que les figures plotly et la page Three.js soient
+# coherentes avec le tableau de bord. Les couleurs viennent du referentiel
+# de palette : surface sombre #1a1a19, encre secondaire #c3c2b7.
+[theme]
+base = "dark"
+backgroundColor = "#0d0d0d"
+secondaryBackgroundColor = "#1a1a19"
+textColor = "#e8ecef"
+primaryColor = "#3987e5"
+
+[server]
+headless = true
+
+[browser]
+gatherUsageStats = false

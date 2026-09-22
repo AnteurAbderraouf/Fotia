@@ -39,12 +39,18 @@ from flame.dashboard.coverage import (  # noqa: E402
     nearest_real_test,
     tested_values,
 )
-from flame.dashboard.predict import build, probability, to_features  # noqa: E402
+from flame.dashboard.predict import (  # noqa: E402
+    build,
+    predicted_diameter,
+    probability,
+    to_features,
+)
 from flame.dashboard.registry import (  # noqa: E402
     MODULES,
     coverage_summary,
     ready_modules,
 )
+from flame.viz.flame3d import figure as flame_figure  # noqa: E402
 
 st.set_page_config(page_title="Fotia — combustion en microgravite", layout="wide")
 
@@ -196,6 +202,42 @@ with tab_predict:
 
         for name, (low, high) in proximity.out_of_range.items():
             st.warning(f"`{name}` : les essais ne couvrent que {low:g} a {high:g}.")
+
+        diameter = predicted_diameter(data, features)
+        if diameter is not None:
+            st.markdown("---")
+            numbers, view = st.columns([1, 2], gap="medium")
+            with numbers:
+                st.markdown("**Si elle s'eteint, a quelle taille ?**")
+                st.markdown(
+                    f"<div style='font-size:34px;font-weight:700;line-height:1.1'>"
+                    f"{diameter:.2f} mm</div>",
+                    unsafe_allow_html=True,
+                )
+                st.caption(
+                    f"± {data.regressor_error:.2f} mm, l'erreur moyenne du modele "
+                    "en validation croisee"
+                )
+                ratio = diameter / query["d0_mm"] if query["d0_mm"] else float("nan")
+                st.caption(
+                    f"soit {ratio:.0%} du diametre de depart — la goutte a brule "
+                    "et retreci avant que la flamme ne lache"
+                )
+                if chance < 0.5:
+                    st.caption(
+                        ":orange[Ce diametre decrit un cas que le modele juge "
+                        "peu probable.]"
+                    )
+            with view:
+                st.plotly_chart(
+                    flame_figure(
+                        initial_mm=float(query["d0_mm"]),
+                        predicted_mm=diameter,
+                        error_mm=data.regressor_error,
+                        extinction_chance=chance,
+                    ),
+                    use_container_width=True,
+                )
 
         st.markdown("---")
         st.markdown("**Essais NASA les plus proches**")

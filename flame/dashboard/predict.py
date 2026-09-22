@@ -46,6 +46,12 @@ class Bundle:
     frame: pd.DataFrame
     index: ProximityIndex
     interpretable: object | None = None
+    # Regresseur secondaire : il repond « a quelle taille », quand le modele
+    # principal repond « est-ce que ». Les deux s'affichent ensemble, car un
+    # diametre d'extinction n'a de sens que si la flamme s'eteint.
+    regressor: object | None = None
+    regressor_columns: list[str] | None = None
+    regressor_error: float = 0.0
 
 
 def _estimator(module: Module):
@@ -72,6 +78,17 @@ def build(module: Module) -> Bundle:
         # lisibles, donc verifiables contre la physique.
         interpretable = logistic(balanced=True).fit(X, y)
 
+    regressor = regressor_columns = None
+    regressor_error = 0.0
+    if module.key == "suppression":
+        from flame.models.extinction_diameter import model as diameter_model
+        from flame.models.extinction_diameter import prepare, typical_error
+
+        diameter_X, diameter_y = prepare()
+        regressor = diameter_model().fit(diameter_X, diameter_y)
+        regressor_columns = list(diameter_X.columns)
+        regressor_error = typical_error()
+
     return Bundle(
         module=module,
         model=model,
@@ -79,6 +96,9 @@ def build(module: Module) -> Bundle:
         frame=frame,
         index=ProximityIndex(frame, module.features),
         interpretable=interpretable,
+        regressor=regressor,
+        regressor_columns=regressor_columns,
+        regressor_error=regressor_error,
     )
 
 
@@ -94,6 +114,15 @@ def to_features(module: Module, query: dict) -> dict:
         if control in features:
             features[feature] = features.pop(control) * factor
     return features
+
+
+def predicted_diameter(bundle: Bundle, features: dict) -> float | None:
+    """Diamètre d'extinction prédit, ou None si le module n'en a pas."""
+    if bundle.regressor is None:
+        return None
+    row = pd.get_dummies(pd.DataFrame([features])[bundle.module.features])
+    row = row.reindex(columns=bundle.regressor_columns, fill_value=0).astype(float)
+    return float(bundle.regressor.predict(row)[0])
 
 
 def probability(bundle: Bundle, features: dict) -> float:

@@ -2,35 +2,25 @@
 
     py -m streamlit run app/main.py
 
-CE QUE CETTE PAGE EST, À CE STADE.
+L'ARCHITECTURE. Une interface unique, un aiguilleur, et derrière lui le module
+compétent pour le régime choisi. Le §8 du handoff tient toujours — pas de
+modèle unique sur toutes les données, les jeux ne partagent ni entrées ni
+sorties — mais une interface unifiée n'est pas un modèle unifié.
 
-Le squelette de l'architecture décidée : une interface unique, un aiguilleur,
-et derrière lui le module compétent pour le régime choisi. Un seul module est
-branché sur un modèle entraîné — la suppression, sur PSI-69. Les six autres
-sont déclarés dans le registre avec ce qu'ils couvrent, de sorte qu'en ajouter
-un revienne à remplir son entrée.
+La page ne code aucun module en dur : elle dessine les commandes déclarées
+dans le registre. En brancher un de plus revient à remplir son entrée.
 
-LE PARTI PRIS D'AFFICHAGE.
+LE PARTI PRIS D'AFFICHAGE. Une grille de curseurs de 6 400 combinaisons n'en
+contient que 40 visitées par un essai réel, soit 0,6 %. La probabilité n'est
+donc JAMAIS affichée seule : elle vient avec la distance aux données et les
+essais réels voisins, et passe en retrait dès que la condition sort du domaine
+mesuré.
 
-Une grille de curseurs de 6 400 combinaisons n'en contient que 40 visitées par
-un essai réel, soit 0,6 %. Presque partout où l'on peut placer les curseurs,
-personne n'a jamais rien mesuré. La probabilité n'est donc JAMAIS affichée
-seule : elle vient avec la distance aux données et les essais réels voisins,
-et passe en retrait dès que la condition sort du domaine mesuré.
-
-DEUX MODES DE RÉGLAGE, ET POURQUOI.
-
-Annoncer « vous êtes hors du domaine » après coup est nécessaire mais
-frustrant : on déplace des curseurs à l'aveugle. Le mode « conditions
-testées » remplace donc les curseurs continus par les valeurs réellement
-essayées, ce qui rend impossible de tomber entre deux essais sur une variable
-donnée.
-
-Cela ne suffit pas, et la carte de couverture explique pourquoi : le domaine
-n'est pas une boîte. Choisir une valeur d'oxygène essayée 25 fois et une
-valeur de CO2 essayée 12 fois peut donner une CASE que personne n'a visitée.
-Le mode « exploration libre » reste disponible pour aller voir ce que le
-modèle extrapole, en toute connaissance de cause.
+DEUX MODES DE RÉGLAGE. Le mode « conditions testées » limite chaque commande
+aux valeurs réellement essayées, ce qui empêche de tomber entre deux essais.
+Cela ne suffit pas : le domaine n'est pas une boîte, et deux valeurs testées
+séparément peuvent former une combinaison qui ne l'a jamais été. L'onglet de
+couverture est là pour ça.
 """
 
 from __future__ import annotations
@@ -49,8 +39,12 @@ from flame.dashboard.coverage import (  # noqa: E402
     nearest_real_test,
     tested_values,
 )
-from flame.dashboard.proximity import ProximityIndex  # noqa: E402
-from flame.dashboard.registry import MODULES, coverage_summary  # noqa: E402
+from flame.dashboard.predict import build, probability, to_features  # noqa: E402
+from flame.dashboard.registry import (  # noqa: E402
+    MODULES,
+    coverage_summary,
+    ready_modules,
+)
 
 st.set_page_config(page_title="Fotia — combustion en microgravite", layout="wide")
 
@@ -60,33 +54,15 @@ BADGE = {
     "outside": ("#d03b3b", "Hors du domaine teste"),
 }
 
+OUTCOME_LABELS = {
+    "suppression": ("Probabilite d'extinction", "la flamme s'eteint"),
+    "sustainment": ("Probabilite d'auto-extinction", "la flamme meurt seule"),
+}
+
 
 @st.cache_resource
-def load_suppression():
-    """Charge les données et entraîne le modèle une fois pour toutes."""
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.pipeline import Pipeline
-    from sklearn.preprocessing import StandardScaler
-
-    from flame.models.suppression import prepare
-
-    X, y = prepare()
-    model = Pipeline(
-        [
-            ("scale", StandardScaler()),
-            (
-                "model",
-                LogisticRegression(
-                    max_iter=5000, class_weight="balanced", random_state=0
-                ),
-            ),
-        ]
-    ).fit(X, y)
-
-    module = MODULES["suppression"]
-    frame = module.loader()
-    frame = frame[frame[module.features].notna().all(axis=1)].reset_index(drop=True)
-    return model, X, frame, ProximityIndex(frame, module.features)
+def bundle_for(key: str):
+    return build(MODULES[key])
 
 
 def badge(verdict: str) -> None:
@@ -98,140 +74,142 @@ def badge(verdict: str) -> None:
     )
 
 
-model, X_train, frame, index = load_suppression()
-module = MODULES["suppression"]
-subset = frame[frame["fuel"] == st.session_state.get("fuel", frame["fuel"].iloc[0])]
+def render_control(control, pool: pd.DataFrame, restricted: bool):
+    """Dessine une commande à partir de sa déclaration dans le registre."""
+    series = pool[control.feature]
+    caption = f"{control.label}" + (f" ({control.unit})" if control.unit else "")
+    hint = control.help or None
+
+    if not pd.api.types.is_numeric_dtype(series):
+        return st.selectbox(caption, sorted(series.dropna().unique()), help=hint)
+
+    values = tested_values(pool, control.feature)
+    low, high = float(series.min()), float(series.max())
+
+    if restricted and len(values) <= 20:
+        middle = values[len(values) // 2]
+        return st.select_slider(caption, values, value=middle, help=hint)
+    if restricted:
+        return st.slider(caption, low, high, float(series.median()), help=hint)
+
+    margin = (high - low) * 0.35 or 1.0
+    return st.slider(
+        caption, low - margin, high + margin, float(series.median()), help=hint
+    )
+
 
 st.title("Fotia")
 st.caption(
     "Donnees de combustion en microgravite de la NASA, rassemblees et rendues "
-    "comparables. 25 investigations, 10 exploitables."
+    "comparables. 25 investigations, 10 exploitables, 2 modules branches."
 )
+
+available = ready_modules()
+choice = st.radio(
+    "Regime",
+    list(available),
+    format_func=lambda key: f"{available[key].name}  ·  {available[key].investigation}",
+    horizontal=True,
+    label_visibility="collapsed",
+)
+module = available[choice]
+data = bundle_for(choice)
+
+st.caption(f"**{module.question}**  ·  {module.regime}")
+if module.note:
+    st.caption(module.note)
 
 tab_predict, tab_coverage, tab_modules, tab_about = st.tabs(
     ["Prediction", "Ou sont les essais", "Couverture des modules", "Methode"]
 )
 
 # ---------------------------------------------------------------------------
-# Onglet 1 : la prediction, jamais seule
-# ---------------------------------------------------------------------------
 with tab_predict:
-    st.subheader(module.name)
-    st.caption(f"{module.question}  ·  {module.regime}  ·  {module.investigation}")
-
     controls, results = st.columns([1, 2], gap="large")
 
     with controls:
         restricted = st.toggle(
             "Conditions testees seulement",
             value=True,
+            key=f"restrict_{choice}",
             help=(
-                "Limite chaque curseur aux valeurs reellement essayees par NASA. "
+                "Limite chaque commande aux valeurs reellement essayees. "
                 "Attention : deux valeurs testees separement peuvent former une "
-                "combinaison qui ne l'a jamais ete — voir l'onglet « Ou sont les "
-                "essais »."
+                "combinaison qui ne l'a jamais ete."
             ),
         )
 
-        fuel = st.selectbox("Carburant", sorted(frame["fuel"].unique()), key="fuel")
-        pool = frame[frame["fuel"] == fuel]
+        query: dict = {}
+        pool = data.frame
+        for control in module.controls:
+            query[control.feature] = render_control(control, pool, restricted)
+            # Les commandes categorielles restreignent le vivier des suivantes :
+            # un carburant donne n'a pas ete essaye dans toutes les conditions.
+            if not pd.api.types.is_numeric_dtype(data.frame[control.feature]):
+                pool = pool[pool[control.feature] == query[control.feature]]
+                if pool.empty:
+                    pool = data.frame
 
-        if restricted:
-            o2 = st.select_slider(
-                "Oxygene", tested_values(pool, "o2_frac"),
-                value=min(tested_values(pool, "o2_frac"), key=lambda v: abs(v - 0.21)),
-            )
-            co2 = st.select_slider("CO2 ajoute", tested_values(pool, "co2_frac"), value=0.0)
-            helium = st.select_slider("Helium ajoute", tested_values(pool, "he_frac"), value=0.0)
-            pressure_atm = st.slider(
-                "Pression (atm)",
-                float(pool["pressure_atm"].min()),
-                float(pool["pressure_atm"].max()),
-                1.0, 0.01,
-            )
-            d0 = st.slider(
-                "Diametre initial (mm)",
-                float(pool["d0_mm"].min()), float(pool["d0_mm"].max()),
-                float(pool["d0_mm"].median()), 0.01,
-            )
+        derived = [c for c in module.controls if c.derived]
+        if derived:
             st.caption(
-                f"valeurs essayees — O2 : {len(tested_values(pool, 'o2_frac'))}, "
-                f"CO2 : {len(tested_values(pool, 'co2_frac'))}, "
-                f"He : {len(tested_values(pool, 'he_frac'))}"
-            )
-        else:
-            o2 = st.slider("Oxygene", 0.05, 0.45, 0.21, 0.01)
-            co2 = st.slider("CO2 ajoute", 0.0, 0.80, 0.0, 0.01)
-            helium = st.slider("Helium ajoute", 0.0, 0.60, 0.0, 0.01)
-            pressure_atm = st.slider("Pression (atm)", 0.3, 3.5, 1.0, 0.05)
-            d0 = st.slider("Diametre initial (mm)", 0.5, 6.0, 2.5, 0.05)
-            st.caption(
-                "Mode libre : les curseurs depassent volontairement le domaine "
-                "mesure, pour voir ce que le modele extrapole."
+                "Grandeurs calculees : "
+                + ", ".join(c.label for c in derived)
+                + ". Elles decoulent du melange, elles ne se reglent pas "
+                "independamment — toute combinaison n'est pas realisable."
             )
 
-        total = o2 + co2 + helium
-        if total > 1.0:
-            st.error(
-                f"Les fractions molaires somment a {total:.2f}. "
-                "Un melange ne peut pas depasser 1."
-            )
-            st.stop()
-        st.caption(f"azote de complement : {1 - total:.2f}")
+        if choice == "suppression":
+            total = query["o2_frac"] + query["co2_frac"] + query["he_frac"]
+            if total > 1.0:
+                st.error(
+                    f"Les fractions molaires somment a {total:.2f}. "
+                    "Un melange ne peut pas depasser 1."
+                )
+                st.stop()
+            st.caption(f"azote de complement : {1 - total:.2f}")
 
-    query = {
-        "fuel": fuel,
-        "pressure_mmhg": pressure_atm * 760.0,
-        "o2_frac": o2,
-        "co2_frac": co2,
-        "he_frac": helium,
-        "d0_mm": d0,
-    }
-
-    row = pd.DataFrame([query])
-    row["fuel_methanol"] = (row.pop("fuel") == "Methanol").astype(int)
-    probability = float(model.predict_proba(row[X_train.columns])[0, 1])
-    proximity = index.assess(query)
+    features = to_features(module, query)
+    chance = probability(data, features)
+    proximity = data.index.assess(features)
+    title, meaning = OUTCOME_LABELS[choice]
 
     with results:
         left, right = st.columns([1, 1])
         with left:
-            st.markdown("**Probabilite d'extinction**")
+            st.markdown(f"**{title}**")
             opacity = "1" if proximity.trustworthy else ".35"
             st.markdown(
                 f"<div style='font-size:52px;font-weight:700;line-height:1;"
-                f"opacity:{opacity}'>{probability:.0%}</div>",
+                f"opacity:{opacity}'>{chance:.0%}</div>",
                 unsafe_allow_html=True,
             )
-            if not proximity.trustworthy:
-                st.caption("en retrait : la condition sort du domaine mesure")
+            st.caption(
+                meaning
+                if proximity.trustworthy
+                else "en retrait : la condition sort du domaine mesure"
+            )
         with right:
             st.markdown("**Distance aux donnees**")
             badge(proximity.verdict)
             st.caption(proximity.explain())
 
         for name, (low, high) in proximity.out_of_range.items():
-            st.warning(
-                f"`{name}` : les essais ne couvrent que {low:g} a {high:g}."
-            )
+            st.warning(f"`{name}` : les essais ne couvrent que {low:g} a {high:g}.")
 
         st.markdown("---")
         st.markdown("**Essais NASA les plus proches**")
         st.caption(
-            "De vraies combustions a bord de l'ISS. Elles valent mieux que la "
+            "De vraies combustions en microgravite. Elles valent mieux que la "
             "prediction quand elles sont proches."
         )
-        columns = [
-            "distance", "fuel", "pressure_atm", "o2_frac", "co2_frac",
-            "he_frac", "d0_mm", "dext_mm", "test_end",
-        ]
+        shown = ["distance"] + module.features + [module.label]
         st.dataframe(
-            proximity.neighbours[[c for c in columns if c in proximity.neighbours]],
-            hide_index=True, use_container_width=True,
+            proximity.neighbours[[c for c in shown if c in proximity.neighbours]],
+            hide_index=True,
+            use_container_width=True,
         )
 
-# ---------------------------------------------------------------------------
-# Onglet 2 : ou sont les essais
 # ---------------------------------------------------------------------------
 with tab_coverage:
     st.subheader("Le domaine teste n'est pas une boite")
@@ -240,51 +218,58 @@ with tab_coverage:
         "n'ont jamais ete essayees : ce n'est pas « peu de donnees », c'est aucune."
     )
 
-    axis_options = {
-        "oxygene": "o2_frac",
-        "CO2 ajoute": "co2_frac",
-        "helium ajoute": "he_frac",
+    numeric_controls = {
+        c.label: c.feature
+        for c in module.controls
+        if pd.api.types.is_numeric_dtype(data.frame[c.feature])
+        and data.frame[c.feature].nunique() <= 40
     }
-    pick = st.columns([1, 1, 2])
-    with pick[0]:
-        y_name = st.selectbox("Axe vertical", list(axis_options), index=0)
-    with pick[1]:
-        x_name = st.selectbox("Axe horizontal", list(axis_options), index=1)
-
-    y_key, x_key = axis_options[y_name], axis_options[x_name]
-    if x_key == y_key:
-        st.info("Choisir deux variables differentes.")
+    if len(numeric_controls) < 2:
+        st.info("Ce module n'a pas deux variables discretes a croiser.")
     else:
-        stats = coverage_stats(frame, x_key, y_key)
-        st.plotly_chart(
-            coverage_figure(
-                frame, x_key, y_key,
-                current=(float(query[x_key]), float(query[y_key])),
-            ),
-            use_container_width=True,
-        )
-        st.caption(
-            f"Le carre orange marque la position choisie dans l'onglet Prediction. "
-            f"{stats['filled']} cases remplies sur {stats['cells']} — le plan "
-            "d'experience fait varier un facteur a la fois, il ne balaie pas une grille."
-        )
+        names = list(numeric_controls)
+        pick = st.columns([1, 1, 2])
+        with pick[0]:
+            y_name = st.selectbox("Axe vertical", names, index=0, key=f"y_{choice}")
+        with pick[1]:
+            x_name = st.selectbox(
+                "Axe horizontal", names, index=min(1, len(names) - 1), key=f"x_{choice}"
+            )
 
-        st.markdown("---")
-        st.markdown("**Se placer sur un essai reel**")
-        nearest = nearest_real_test(frame, query, module.features)
-        display = nearest[
-            [c for c in ["fuel", "pressure_atm", "o2_frac", "co2_frac", "he_frac",
-                         "d0_mm", "dext_mm", "test_end"] if c in nearest.index]
-        ]
-        st.dataframe(display.to_frame("valeur").T, hide_index=True,
-                     use_container_width=True)
-        st.caption(
-            "L'essai NASA le plus proche de la position courante. Ses conditions "
-            "sont, par construction, dans le domaine teste."
-        )
+        y_key, x_key = numeric_controls[y_name], numeric_controls[x_name]
+        if x_key == y_key:
+            st.info("Choisir deux variables differentes.")
+        else:
+            stats = coverage_stats(data.frame, x_key, y_key)
+            st.plotly_chart(
+                coverage_figure(
+                    data.frame,
+                    x_key,
+                    y_key,
+                    current=(float(query[x_key]), float(query[y_key])),
+                ),
+                use_container_width=True,
+            )
+            st.caption(
+                f"Le carre orange marque la position choisie dans l'onglet "
+                f"Prediction. {stats['filled']} cases remplies sur {stats['cells']}."
+            )
 
-# ---------------------------------------------------------------------------
-# Onglet 3 : couverture des modules
+    st.markdown("---")
+    st.markdown("**Se placer sur un essai reel**")
+    nearest = nearest_real_test(data.frame, features, module.features)
+    st.dataframe(
+        nearest[[c for c in module.features + [module.label] if c in nearest.index]]
+        .to_frame("valeur")
+        .T,
+        hide_index=True,
+        use_container_width=True,
+    )
+    st.caption(
+        "L'essai le plus proche de la position courante. Ses conditions sont, "
+        "par construction, dans le domaine teste."
+    )
+
 # ---------------------------------------------------------------------------
 with tab_modules:
     st.subheader("Ce que le tableau de bord sait faire, et ce qui reste a brancher")
@@ -296,8 +281,6 @@ with tab_modules:
     st.dataframe(coverage_summary(), hide_index=True, use_container_width=True)
 
 # ---------------------------------------------------------------------------
-# Onglet 4 : methode
-# ---------------------------------------------------------------------------
 with tab_about:
     st.subheader("Pourquoi la probabilite n'est jamais affichee seule")
     st.markdown(
@@ -306,31 +289,44 @@ Sur PSI-69, une grille de curseurs a dix crans sur l'oxygene, dix sur le CO2,
 huit sur l'helium et huit sur la pression ouvre **6 400 combinaisons**. Quarante
 d'entre elles ont ete visitees par au moins un essai reel, soit **0,6 %**.
 
-Le plan d'experience fait varier **un facteur a la fois**. Sur le croisement
-oxygene x CO2, la colonne sans CO2 est complete sur les 14 niveaux d'oxygene,
-puis chaque niveau d'oxygene n'a ete croise qu'avec un ou deux niveaux de CO2 :
-31 cases remplies sur 196. D'ou un piege contre-intuitif — **choisir deux
-valeurs testees separement ne garantit pas que leur combinaison l'ait ete.**
-
-Exemple trouve par le voyant lui-meme : FLEX-1 n'a **jamais** combine CO2 et
-helium. Zero essai sur 213. Le tableau de bord ne peut donc rien dire de leur
-effet conjoint, et il le signale au lieu de repondre quand meme.
+Le plan d'experience fait varier **un facteur a la fois** : sur le croisement
+oxygene x CO2, 31 cases remplies sur 196. D'ou un piege contre-intuitif —
+choisir deux valeurs testees separement ne garantit pas que leur combinaison
+l'ait ete. Exemple trouve par le voyant lui-meme : FLEX-1 n'a **jamais**
+combine CO2 et helium, zero essai sur 213.
 
 Le seuil qui separe « dans le domaine » de « extrapolation » n'est pas choisi a
-la main. On mesure d'abord, a l'interieur du jeu de donnees, la distance de
-chaque essai a son plus proche voisin : cette distribution dit ce qu'est un
-voisinage normal pour ces donnees-la. Le seuil se recalibre donc tout seul pour
-un autre module.
+la main. On mesure d'abord, dans le jeu de donnees, la distance de chaque essai
+a son plus proche voisin : cette distribution dit ce qu'est un voisinage normal
+pour ces donnees-la, et le seuil se recalibre pour chaque module.
+        """
+    )
+    st.markdown("---")
+    st.subheader("Le modele n'est pas le meme d'un module a l'autre")
+    st.markdown(
+        """
+Le plan initial proscrivait les ensembles « a ce nombre de lignes ». Mesure jeu
+par jeu, cette regle tient pour l'un et pas pour l'autre :
 
-**Ce que NASA n'a pas teste est une information.** Pour un ingenieur securite
-incendie, apprendre qu'aucune campagne n'a explore son materiau a 30 %
-d'oxygene vaut au moins autant qu'une probabilite.
+| module | essais | classe rare | regression | arbre / foret |
+|---|---|---|---|---|
+| Suppression (PSI-69) | 206 | 27 | **0.753** | arbre illimite 0.678 |
+| Auto-entretien (PSI-159) | 272 | 89 | 0.722 | **foret prof. 6 — 0.840** |
+
+Sur PSI-159 la foret gagne douze points, et la raison est physique : les flammes
+normales et inverses ont des coefficients de signe **oppose** sur la pression et
+le debit. Un modele lineaire qui met les deux configurations en commun moyenne
+deux effets contraires ; un arbre separe d'abord sur la configuration.
+
+La foret predit mieux, la regression explique mieux : les deux sont gardees. Le
+controle des coefficients contre la physique attendue est ce qui a revele
+l'inversion de signe — aucun score ne l'aurait montre.
         """
     )
     st.markdown("---")
     st.caption(
-        "Les features n'utilisent que ce qui est connu AVANT l'allumage. Le diametre "
-        "d'extinction, la duree de combustion et le taux de combustion sont mesures "
-        "pendant ou apres : les donner en entree reviendrait a predire l'extinction "
-        "a partir de la preuve qu'elle a eu lieu."
+        "Les features n'utilisent que ce qui est connu AVANT l'allumage. Le "
+        "diametre d'extinction, la duree de combustion et le taux de combustion "
+        "sont mesures pendant ou apres : les donner en entree reviendrait a "
+        "predire l'extinction a partir de la preuve qu'elle a eu lieu."
     )

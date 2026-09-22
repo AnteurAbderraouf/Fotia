@@ -32,6 +32,23 @@ import pandas as pd
 
 
 @dataclass(frozen=True)
+class Control:
+    """Une commande du tableau de bord, declaree par le module.
+
+    `derived` marque une grandeur qui n'est pas un reglage mais une propriete
+    CALCULEE du melange — Tad et Zst dans PSI-159. On peut la faire varier
+    pour explorer, mais toute combinaison n'est pas physiquement realisable,
+    et c'est la carte de couverture qui le dit.
+    """
+
+    feature: str
+    label: str
+    unit: str = ""
+    derived: bool = False
+    help: str = ""
+
+
+@dataclass(frozen=True)
 class Module:
     """Un module : un régime physique, une question, un jeu de données."""
 
@@ -46,6 +63,9 @@ class Module:
     outcome_kind: str = "classification"
     ready: bool = False
     note: str = ""
+    controls: list[Control] = field(default_factory=list)
+    rare_label: int = 0
+    unit_conversions: dict = field(default_factory=dict)
 
 
 def _psi69():
@@ -79,6 +99,16 @@ MODULES: dict[str, Module] = {
         outcome_kind="classification",
         ready=True,
         note="Seul jeu du catalogue portant sur la suppression d'incendie.",
+        rare_label=0,
+        controls=[
+            Control("fuel", "Carburant"),
+            Control("o2_frac", "Oxygene", "fraction molaire"),
+            Control("co2_frac", "CO2 ajoute", "fraction molaire"),
+            Control("he_frac", "Helium ajoute", "fraction molaire"),
+            Control("pressure_atm", "Pression", "atm"),
+            Control("d0_mm", "Diametre initial de la goutte", "mm"),
+        ],
+        unit_conversions={"pressure_mmhg": ("pressure_atm", 760.0)},
     ),
     "cool_flames": Module(
         key="cool_flames",
@@ -120,8 +150,27 @@ MODULES: dict[str, Module] = {
         ],
         label="self_extinguished",
         outcome_kind="classification",
-        ready=False,
-        note="Etiquette la mieux equilibree du catalogue, plancher 67 %.",
+        ready=True,
+        note=(
+            "Etiquette la mieux equilibree du catalogue, plancher 67 %. "
+            "Seul module ou une foret bat la regression : les deux configurations "
+            "ont des effets de signe oppose."
+        ),
+        rare_label=0,
+        controls=[
+            Control("flame_type", "Configuration",
+                    help="Normale : carburant injecte dans une ambiance oxydante. "
+                         "Inverse : oxygene injecte dans une ambiance carburee."),
+            Control("fuel", "Carburant"),
+            Control("fuel_dilution", "Purete du carburant", "1 = pur",
+                    help="0.3 signifie dilue a 30 % dans de l'azote."),
+            Control("pressure_bar", "Pression", "bar"),
+            Control("fuel_flow_mg_s", "Debit de carburant", "mg/s"),
+            Control("tad_k", "Temperature de flamme adiabatique", "K", derived=True,
+                    help="CALCULEE a partir du melange, pas reglee independamment."),
+            Control("zst", "Fraction de melange stoechiometrique", "", derived=True,
+                    help="CALCULEE a partir du melange, pas reglee independamment."),
+        ],
     ),
     "detection": Module(
         key="detection",

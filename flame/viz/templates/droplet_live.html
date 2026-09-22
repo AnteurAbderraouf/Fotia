@@ -24,6 +24,11 @@
   select { width:100%; font:inherit; padding:4px 6px; background:#222930;
            color:var(--text); border:1px solid #3a434c; border-radius:4px; }
   .note { color:var(--muted); font-size:11px; margin-top:8px; line-height:1.45; }
+  .toggle { border-bottom:1px solid var(--line); padding-bottom:10px; }
+  .switch { display:flex; align-items:center; gap:7px; }
+  .switch input { accent-color:var(--accent); width:15px; height:15px; margin:0; }
+  .switch span { color:var(--muted); font-size:11px; }
+  #snapshot { width:100%; margin-top:9px; }
 
   #stage { position:relative; min-width:0; }
   canvas { display:block; }
@@ -58,6 +63,13 @@
 <div id="app">
   <div id="panel">
     <h3>Conditions</h3>
+    <div class="ctl toggle">
+      <label for="snap"><span>Conditions testees seulement</span></label>
+      <div class="switch">
+        <input id="snap" type="checkbox" checked>
+        <span id="snapNote"></span>
+      </div>
+    </div>
     <div class="ctl"><label>Carburant</label><select id="fuel"></select></div>
     <div class="ctl"><label>Oxygene <b id="o2v"></b></label><input id="o2" type="range"></div>
     <div class="ctl"><label>CO2 ajoute <b id="co2v"></b></label><input id="co2" type="range"></div>
@@ -65,6 +77,7 @@
     <div class="ctl"><label>Pression <b id="pv"></b></label><input id="p" type="range"></div>
     <div class="ctl"><label>Diametre initial <b id="d0v"></b></label><input id="d0" type="range"></div>
     <div class="note" id="n2note"></div>
+    <button id="snapshot">Aller sur un essai reel</button>
     <div class="note">
       Tout est calcule dans cette page : les trois modeles sont lineaires, donc
       un produit scalaire. Rien ne repasse par le serveur, d'ou l'absence de
@@ -154,9 +167,28 @@ const fuelSel = el('fuel');
 P.fuels.forEach(f => { const o = document.createElement('option');
                        o.value = o.textContent = f; fuelSel.appendChild(o); });
 
+// Les curseurs restent bornes aux valeurs extremes essayees. Quand
+// l'accrochage est actif, ils ne s'arretent QUE sur des valeurs reellement
+// testees : on ne peut plus tomber entre deux essais.
+const SPECS = {};
 function setupRange(input, spec, initial, step) {
   input.min = spec.min; input.max = spec.max; input.step = step;
   input.value = initial;
+  SPECS[input.id] = spec;
+}
+
+function nearestTested(values, x) {
+  let best = values[0];
+  for (const v of values) if (Math.abs(v - x) < Math.abs(best - x)) best = v;
+  return best;
+}
+
+function applySnap(input) {
+  if (!el('snap').checked) return;
+  const spec = SPECS[input.id];
+  if (spec && spec.values && spec.values.length) {
+    input.value = nearestTested(spec.values, +input.value);
+  }
 }
 setupRange(el('o2'),  P.ranges.o2_frac,      0.21, 0.005);
 setupRange(el('co2'), P.ranges.co2_frac,     0.00, 0.005);
@@ -247,8 +279,34 @@ function recompute() {
   Object.assign(target, { d0, dext, k, duration });
 }
 
-['o2','co2','he','p','d0'].forEach(id => el(id).addEventListener('input', recompute));
+['o2','co2','he','p','d0'].forEach(id =>
+  el(id).addEventListener('input', () => { applySnap(el(id)); recompute(); }));
 fuelSel.addEventListener('change', recompute);
+
+el('snap').addEventListener('change', () => {
+  ['o2','co2','he','p','d0'].forEach(id => applySnap(el(id)));
+  updateSnapNote();
+  recompute();
+});
+
+function updateSnapNote() {
+  const on = el('snap').checked;
+  const counts = ['o2_frac','co2_frac','he_frac'].map(k => P.ranges[k].values.length);
+  el('snapNote').textContent = on
+    ? `O2 ${counts[0]} · CO2 ${counts[1]} · He ${counts[2]} valeurs essayees`
+    : 'libre : les curseurs passent entre les essais';
+}
+
+// Se placer sur un essai NASA reel : toutes ses conditions d'un coup, donc
+// necessairement dans le domaine.
+el('snapshot').addEventListener('click', () => {
+  const pool = P.tests.filter(t => t.fuel === fuelSel.value);
+  const t = pool[Math.floor(Math.random() * pool.length)];
+  el('o2').value = t.o2_frac; el('co2').value = t.co2_frac;
+  el('he').value = t.he_frac; el('p').value = t.pressure_atm;
+  el('d0').value = t.d0_mm;
+  recompute();
+});
 
 // --- boucle -----------------------------------------------------------------
 let elapsed = 0, running = true, dragging = false;
@@ -310,6 +368,8 @@ function animate(now) {
     frames = 0; lastSample = now;
   }
 }
+updateSnapNote();
+['o2','co2','he','p','d0'].forEach(id => applySnap(el(id)));
 recompute();
 Object.assign(shown, target);
 requestAnimationFrame(animate);

@@ -26,15 +26,27 @@ LES CINQ CAS :
     10cm gravite terrestre
     10cm microgravite
 
-CE QUE LES GRILLES NE PORTENT PAS.
-  * Pas d'axes physiques. Les deux fichiers de maillage de coordonnées
-    (`*_sGrid_grid3d.dat`) n'ont pas pu être lus — lignes de longueur
-    inégale, c'est le cas limite connu et non corrigé du §5 du handoff. Les
-    étendues calculées ici sont donc exprimées EN CELLULES, pas en
-    millimètres. Une carte reste juste, une distance chiffrée ne l'est pas.
-  * Les températures sont NORMALISÉES, pas en kelvins : elles vont de 1 à
-    1.577, soit un rapport à la température ambiante. Les lire comme des
-    degrés serait un contresens.
+LE MAILLAGE EST RÉCUPÉRÉ (2026-09-22). Les fichiers `*_sGrid_grid3d.dat`
+étaient notés « FAILED » au §5 du handoff. Le format n'avait rien
+d'irrégulier : trois entiers en première ligne, puis 691 200 coordonnées sur
+une seule ligne. `scripts/extract_mesh.py` les lit et en extrait les deux
+axes, la grille étant séparable. Trois conséquences :
+
+  * La tranche est AXISYMÉTRIQUE — z nul partout, y symétrique autour de
+    zéro. La ligne y = 0 est un axe de révolution, ce qui autorise à
+    reconstruire le volume 3D que la simulation représentait déjà.
+  * Le maillage est ÉTIRÉ, facteur 3.8 en x et 1.5 en y. Les étendues de
+    panache calculées auparavant comptaient des cellules en les supposant
+    équivalentes : elles étaient fausses. Elles sont maintenant calculées
+    sur les coordonnées.
+  * Les unités restent NORMALISÉES et non métriques : x va de 0 à 40, y de
+    -3.409 à 3.409. La convention de normalisation n'est documentée nulle
+    part. Les formes et les rapports sont justes, l'échelle absolue reste
+    inconnue.
+
+Les températures sont elles aussi NORMALISÉES, entre 1 et 1.577, soit un
+rapport à la température ambiante. Les lire comme des degrés serait un
+contresens.
 
 LES VALEURS NON FINIES SONT UNE INFORMATION, PAS UN TROU.
 La grille de taux de nucléation ne contient que 89 924 valeurs finies sur
@@ -59,7 +71,8 @@ from flame.common.paths import processed_path, psi_dir
 FIELDS_DIR = psi_dir("PSI-115") / "fields"
 
 # Fichiers qui ne sont pas des champs 2D.
-NOT_A_GRID = {"manifest.csv", "nodeDiameters.csv"}
+NOT_A_GRID = {"manifest.csv", "nodeDiameters.csv", "mesh_axes.csv"}
+MESH_CSV = psi_dir("PSI-115") / "mesh_axes.csv"
 
 VARIABLE_LABELS = {
     "temperature": "temperature (normalisee)",
@@ -99,8 +112,39 @@ def _describe(path) -> dict | None:
     }
 
 
-def _summarise(values: np.ndarray) -> dict:
-    """Ramène une grille à des scalaires, sans inventer d'axes physiques."""
+def load_mesh() -> tuple[np.ndarray, np.ndarray]:
+    """Les deux axes du maillage, en coordonnées normalisées.
+
+    Produits par `scripts/extract_mesh.py` depuis les fichiers
+    `*_sGrid_grid3d.dat` de NASA. La grille est séparable, donc 960 + 240
+    valeurs décrivent entièrement les 230 400 nœuds.
+
+    Le maillage est ÉTIRÉ — facteur 3.8 en x, 1.5 en y — et c'est la raison
+    d'être de cette fonction : toute statistique spatiale calculée en comptant
+    des cellules suppose qu'elles se valent, ce qui est faux ici.
+    """
+    if not MESH_CSV.exists():
+        raise FileNotFoundError(
+            f"{MESH_CSV.name} absent. Le produire avec "
+            "`python scripts/extract_mesh.py` (necessite raw/, exclu du depot)."
+        )
+    mesh = pd.read_csv(MESH_CSV)
+    axis_x = mesh.loc[mesh["axis"] == "x", "coordinate"].to_numpy()
+    axis_y = mesh.loc[mesh["axis"] == "y", "coordinate"].to_numpy()
+    return axis_x, axis_y
+
+
+def _summarise(values: np.ndarray, axis_y: np.ndarray | None) -> dict:
+    """Ramène une grille à des scalaires.
+
+    L'étendue transverse est l'écart-type de la coordonnée y pondéré par la
+    valeur du champ. Aucun seuil à choisir, donc aucune convention arbitraire.
+
+    Elle est calculée sur les COORDONNÉES et non sur les indices de ligne.
+    Une version antérieure comptait les cellules : le maillage étant étiré
+    d'un facteur 1.5 en y, les chiffres produits étaient faux. Les cellules
+    ne se valent pas.
+    """
     finite = np.isfinite(values)
     result = {
         "cells": int(values.size),
@@ -117,22 +161,27 @@ def _summarise(values: np.ndarray) -> dict:
         "std": float(data.std()),
     }
 
-    # Etendue transverse du champ, mesuree comme l'ecart-type des indices de
-    # ligne ponderes par la valeur. Sans seuil a choisir, donc sans convention
-    # arbitraire — mais exprimee EN CELLULES, faute d'axes physiques.
+    if axis_y is None or len(axis_y) != values.shape[0]:
+        return result
+
     weights = np.where(finite, values, 0.0)
     weights = np.clip(weights - np.nanmin(data), 0, None)
     total = weights.sum()
     if total > 0:
-        rows = np.arange(values.shape[0])[:, None]
-        centre = float((weights * rows).sum() / total)
-        spread = float(np.sqrt((weights * (rows - centre) ** 2).sum() / total))
-        result |= {"transverse_centre_cells": centre, "transverse_spread_cells": spread}
+        coordinates = axis_y[:, None]
+        centre = float((weights * coordinates).sum() / total)
+        spread = float(np.sqrt((weights * (coordinates - centre) ** 2).sum() / total))
+        result |= {"transverse_centre": centre, "transverse_spread": spread}
     return result
 
 
 def load() -> pd.DataFrame:
     """Une ligne par grille : le cas simulé, la variable, et ses scalaires."""
+    try:
+        _, axis_y = load_mesh()
+    except FileNotFoundError:
+        axis_y = None
+
     rows = []
     for path in sorted(FIELDS_DIR.glob("*.csv")):
         if path.name in NOT_A_GRID:
@@ -150,7 +199,11 @@ def load() -> pd.DataFrame:
         if values.ndim != 2 or min(values.shape) < 2:
             continue
 
-        rows.append(described | {"rows": values.shape[0], "cols": values.shape[1]} | _summarise(values))
+        rows.append(
+            described
+            | {"rows": values.shape[0], "cols": values.shape[1]}
+            | _summarise(values, axis_y)
+        )
 
     df = pd.DataFrame(rows)
     df["case"] = (
@@ -181,11 +234,11 @@ def main() -> None:
     ).round(3)
     print(pivot.to_string())
 
-    print("\netendue transverse du panache (en cellules, pas en mm) :")
+    print("\netendue transverse du panache (coordonnees normalisees du maillage) :")
     spread = df[df["variable"].isin(["smoke", "temperature", "numden"])].pivot_table(
         index=["variable_label", "burner_size_cm"],
         columns="gravity",
-        values="transverse_spread_cells",
+        values="transverse_spread",
     ).round(1)
     print(spread.to_string())
 

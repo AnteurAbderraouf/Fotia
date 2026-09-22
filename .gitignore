@@ -39,6 +39,12 @@ combustion_science/**/fields/
 # et une conversion d'unité muette — et aucun n'aurait levé d'erreur.
 # ---------------------------------------------------------------------------
 
+# Figures generees. Contrairement a data/processed/, elles ne sont pas
+# suivies : un diff sur du HTML ou un PNG est illisible, donc l'argument
+# « reperer une regression silencieuse » ne tient pas ici. Elles se
+# regenerent par flame/viz/.
+data/figures/
+
 # Python
 __pycache__/
 *.py[cod]

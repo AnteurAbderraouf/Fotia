@@ -30,6 +30,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -42,6 +43,7 @@ from flame.dashboard.coverage import (  # noqa: E402
 from flame.dashboard.predict import (  # noqa: E402
     build,
     predicted_diameter,
+    predicted_rate,
     probability,
     to_features,
 )
@@ -50,7 +52,8 @@ from flame.dashboard.registry import (  # noqa: E402
     coverage_summary,
     ready_modules,
 )
-from flame.viz.flame3d import figure as flame_figure  # noqa: E402
+from flame.models.droplet_burn import burn_duration  # noqa: E402
+from flame.viz.droplet_anim import page as droplet_page  # noqa: E402
 
 st.set_page_config(page_title="Fotia — combustion en microgravite", layout="wide")
 
@@ -204,39 +207,52 @@ with tab_predict:
             st.warning(f"`{name}` : les essais ne couvrent que {low:g} a {high:g}.")
 
         diameter = predicted_diameter(data, features)
-        if diameter is not None:
+        rate = predicted_rate(data, features)
+        if diameter is not None and rate is not None:
             st.markdown("---")
-            numbers, view = st.columns([1, 2], gap="medium")
-            with numbers:
-                st.markdown("**Si elle s'eteint, a quelle taille ?**")
+            d0 = float(query["d0_mm"])
+            duration = burn_duration(d0, diameter, rate)
+
+            numbers = st.columns(3)
+            with numbers[0]:
+                st.markdown("**Diametre d'extinction**")
                 st.markdown(
-                    f"<div style='font-size:34px;font-weight:700;line-height:1.1'>"
+                    f"<div style='font-size:30px;font-weight:700;line-height:1.1'>"
                     f"{diameter:.2f} mm</div>",
                     unsafe_allow_html=True,
                 )
-                st.caption(
-                    f"± {data.regressor_error:.2f} mm, l'erreur moyenne du modele "
-                    "en validation croisee"
+                st.caption(f"± {data.regressor_error:.2f} · {diameter / d0:.0%} de d0")
+            with numbers[1]:
+                st.markdown("**Vitesse de combustion**")
+                st.markdown(
+                    f"<div style='font-size:30px;font-weight:700;line-height:1.1'>"
+                    f"{rate:.3f}</div>",
+                    unsafe_allow_html=True,
                 )
-                ratio = diameter / query["d0_mm"] if query["d0_mm"] else float("nan")
-                st.caption(
-                    f"soit {ratio:.0%} du diametre de depart — la goutte a brule "
-                    "et retreci avant que la flamme ne lache"
+                st.caption(f"mm²/s · ± {data.rate_error:.3f} · constante K")
+            with numbers[2]:
+                st.markdown("**Duree jusqu'a l'extinction**")
+                st.markdown(
+                    f"<div style='font-size:30px;font-weight:700;line-height:1.1'>"
+                    f"{duration:.1f} s</div>",
+                    unsafe_allow_html=True,
                 )
-                if chance < 0.5:
-                    st.caption(
-                        ":orange[Ce diametre decrit un cas que le modele juge "
-                        "peu probable.]"
-                    )
-            with view:
-                st.plotly_chart(
-                    flame_figure(
-                        initial_mm=float(query["d0_mm"]),
-                        predicted_mm=diameter,
-                        error_mm=data.regressor_error,
-                        extinction_chance=chance,
-                    ),
-                    use_container_width=True,
+                st.caption("deduite de la loi en d², non mesuree ici")
+
+            components.html(droplet_page(d0, diameter, rate), height=430)
+            st.caption(
+                "La gouttelette retrecit selon la **loi en d²** — d²(t) = d₀² − K·t — "
+                "le resultat fondateur de la combustion de gouttelettes. Ce n'est pas "
+                "une interpolation entre deux mesures : K est releve essai par essai, "
+                "et la loi reproduit les durees mesurees avec une correlation de "
+                "**0.995** sur les 158 extinctions completes. Les grilles bleue et "
+                "orange marquent le depart et l'extinction."
+            )
+            if chance < 0.5:
+                st.caption(
+                    ":orange[Le modele ne donne que "
+                    f"{chance:.0%} de chances d'extinction : cette trajectoire "
+                    "decrit un cas qu'il juge peu probable.]"
                 )
 
         st.markdown("---")

@@ -1,0 +1,45 @@
+{
+  "PSI-107_metadata_PSI-176_SPICE.zip": "Investigation Metadata Files/PSI-107_metadata_PSI-176_SPICE.zip",
+
+  "SPICE Final Report 12_2_2012.pdf":              "Reports/SPICE Final Report 12_2_2012.pdf",
+  "Exp_19-20_SPICE_30-Day_PostFlight_Report.pdf":  "Reports/Exp_19-20_SPICE_30-Day_PostFlight_Report.pdf",
+  "Dotson_umd_0117N_10980.pdf":                    "Reports/Dotson_umd_0117N_10980.pdf",
+  "SPICE AIAA 1-6 2010 0106.pdf":                  "Reports/SPICE AIAA 1-6 2010 0106.pdf",
+  "SPICE SRD 8-23-07 with sigs.doc":               "Reports/SPICE SRD 8-23-07 with sigs.doc",
+  "SPICE  ops 2-13-09.ppt":                        "Reports/SPICE  ops 2-13-09.ppt",
+  "SPICE-1 Ops Overview and Smoke Point Cue Card.ppt": "Reports/SPICE-1 Ops Overview and Smoke Point Cue Card.ppt",
+  "SLICE IP-C crew training 2010.pdf":             "Reports/SLICE IP-C crew training 2010.pdf",
+  "SLICE IP-D crew training 2011.pdf":             "Reports/SLICE IP-D crew training 2011.pdf",
+
+  "SPICE Phase III Flight Safety Data Package_May 2008.pdf":      "Engineering Documents/SPICE Phase III Flight Safety Data Package_May 2008.pdf",
+  "MEM-010.pdf":                                                  "Engineering Documents/MEM-010.pdf",
+  "60054MAFH000-C SPICE Experiment Assembly.pdf":                 "Engineering Documents/60054MAFH000-C SPICE Experiment Assembly.pdf",
+  "SPICE RPT-002 Science Verif Report_May 2007.pdf":              "Engineering Documents/SPICE RPT-002 Science Verif Report_May 2007.pdf",
+  "SLICE 4.001 SPICE Video Overlay Reset-MGUEMSGSLCEC001.pdf":    "Engineering Documents/SLICE 4.001 SPICE Video Overlay Reset-MGUEMSGSLCEC001.pdf",
+
+  "SPICE Image Organization Guide.docx":     "Raw Data/SPICE Image Organization Guide.docx",
+  "Spice Flight Test Data II modified.xls":  "Raw Data/Spice Flight Test Data II modified.xls",
+  "SmokePointReview-0g-3.xlsx":              "Raw Data/SmokePointReview-0g-3.xlsx",
+
+  "045_SPICE_DSC_num.txt":                                                   "Raw Data/Data Images 045/045_SPICE_DSC_num.txt",
+  "Spice_Flight_Flamelength.xls":                                            "Raw Data/Data Images 045/Spice_Flight_Flamelength.xls",
+  "Ethylene assembled smoke hieght slide.  GMT 045 1503      11 26 2011.pptx": "Raw Data/Data Images 045/Ethylene assembled smoke hieght slide.  GMT 045 1503      11 26 2011.pptx",
+  "SPICE_GMT045_2009_NikonD100_PictureBook.ppt":                             "Raw Data/Data Images 045/SPICE_GMT045_2009_NikonD100_PictureBook.ppt",
+  "SPICE_GMT045_2009_NEF.zip":                                               "Raw Data/Data Images 045/SPICE_GMT045_2009_NEF.zip",
+  "SPICE GMT045 2009 Contact Sheets.zip":                                    "Raw Data/Data Images 045/SPICE GMT045 2009 Contact Sheets.zip",
+  "SPICE GMT045 2009 jpegs.zip":                                             "Raw Data/Data Images 045/SPICE GMT045 2009 jpegs.zip",
+  "SPICE Day 045 Test Point Images.zip":                                     "Raw Data/Data Images 045/SPICE Day 045 Test Point Images.zip",
+  "vlcsnap downlink frame grabs.zip":                                        "Raw Data/Data Images 045/vlcsnap downlink frame grabs.zip",
+  "Downlink Frame Grabs 36f.zip":                                            "Raw Data/Data Images 045/Downlink Frame Grabs 36f.zip",
+
+  "048_SPICE_num.txt":                            "Raw Data/Data Images 048/048_SPICE_num.txt",
+  "SPICE_GMT048_2009_NikonD100_PictureBook.ppt":  "Raw Data/Data Images 048/SPICE_GMT048_2009_NikonD100_PictureBook.ppt",
+  "SPICE_GMT048_2009_NEF.zip":                    "Raw Data/Data Images 048/SPICE_GMT048_2009_NEF.zip",
+  "SPICE GMT048 2009 Contact Sheets.zip":         "Raw Data/Data Images 048/SPICE GMT048 2009 Contact Sheets.zip",
+  "SPICE GMT048 2009 jpegs.zip":                  "Raw Data/Data Images 048/SPICE GMT048 2009 jpegs.zip",
+  "Downlink Frame Grabs - Ruler.zip":             "Raw Data/Data Images 048/Downlink Frame Grabs - Ruler.zip",
+  "Downlink Frame Grabs - TP 13.zip":             "Raw Data/Data Images 048/Downlink Frame Grabs - TP 13.zip",
+  "Downlink Frame Grabs - TP 14.zip":             "Raw Data/Data Images 048/Downlink Frame Grabs - TP 14.zip",
+  "Downlink Frame Grabs - TP 15.zip":             "Raw Data/Data Images 048/Downlink Frame Grabs - TP 15.zip",
+  "Downlink Frame Grabs - TP 16.zip":             "Raw Data/Data Images 048/Downlink Frame Grabs - TP 16.zip"
+}

@@ -1,0 +1,60 @@
+# ---------------------------------------------------------------------------
+# Archive NASA — 4,8 Go qui ne doivent JAMAIS entrer dans git.
+#
+# git conserve un historique de code, il ne sauvegarde pas des données. Ces
+# dossiers restent sur le disque et se sauvegardent autrement (disque externe,
+# cloud). GitHub refuse par ailleurs tout fichier de plus de 100 Mo.
+#
+# Mesuré le 2026-09-22 : raw/ 2 380 Mo · zips 2 379 Mo · reports/ 161 Mo ·
+# fields/ 129 Mo. Ce qui reste versionné pèse 7,9 Mo.
+# ---------------------------------------------------------------------------
+
+# Arbre NASA reconstruit — duplique exactement le contenu des zips
+combustion_science/**/raw/
+
+# Téléchargements NASA d'origine, gardés comme trace sur le disque
+combustion_science/**/download*.zip
+combustion_science/**/*.zip
+
+# Rapports et articles PDF
+combustion_science/**/reports/
+
+# Grilles CFD de PSI-115 : 42 fichiers de 240x960 cellules.
+# Régénérables par scripts/convert_dat.py puis scripts/clean_dat_csv.py
+# depuis raw/, qui est lui-même dans les zips.
+combustion_science/**/fields/
+
+# ---------------------------------------------------------------------------
+# Ce qui EST versionné, et pourquoi — pour mémoire, ces lignes ne font rien :
+#
+#   combustion_science/**/csv/        6,9 Mo — les fichiers de travail
+#   combustion_science/**/info.md            — descriptions NASA verbatim
+#   combustion_science/**/layout.json        — plans de dépliage des zips
+#   data/processed/                   0,5 Mo — tables nettoyées
+#   flame/ scripts/ handoff*.md
+#
+# data/processed/ est suivi alors qu'il est régénérable. C'est volontaire :
+# un diff sur ces tables rend visible toute modification silencieuse d'un
+# loader. Deux bugs de ce type ont déjà été trouvés — une provenance écrasée
+# et une conversion d'unité muette — et aucun n'aurait levé d'erreur.
+# ---------------------------------------------------------------------------
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.ipynb_checkpoints/
+
+# Outils
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Brouillons
+*.tmp
+*.bak
+scratch/

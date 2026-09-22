@@ -1,0 +1,24 @@
+strain_rate_1_s,measurement,value,data_id,publication,figure,fuel,fuel_mole_fraction,reference_temp_k,ozone,max_temperature_k,investigation,source,gravity
+59.0,phi_hot_extinction,0.0876,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+59.0,phi_cool_extinction,0.0664,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+71.0,phi_hot_extinction,0.0939,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+71.0,phi_cool_extinction,0.0734,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+83.0,phi_hot_extinction,0.0997,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+83.0,phi_cool_extinction,0.0898,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+95.0,phi_hot_extinction,0.1051,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+95.0,phi_cool_extinction,0.1149,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+107.0,phi_hot_extinction,0.1089,data ID 4,"C.B. Reuter et al., Proc. Combustion Institute 37 (2019) 1851",Fig. 2,,,,,,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.1,550.0,True,814.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.075,550.0,True,796.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.0512,550.0,True,767.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.1,550.0,False,751.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.085,550.0,False,735.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.075,550.0,False,731.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.1,600.0,True,809.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.0782,600.0,True,792.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.0539,600.0,True,783.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.0308,600.0,True,762.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.1,600.0,False,758.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.0879,600.0,False,753.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.0801,600.0,False,749.0,PSI-142,experiment,1g
+,,,data ID 8,"O.R. Yehia et al., Proc. Combustion Institute 37 (2019) 1717",Fig. 9,n-dodecane,0.0687,600.0,False,742.0,PSI-142,experiment,1g

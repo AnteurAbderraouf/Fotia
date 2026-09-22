@@ -1,0 +1,21 @@
+# Fins de ligne normalisées en LF dans le dépôt, quelle que soit la machine.
+# Sans ça, Windows réécrit les fins de ligne et chaque fichier apparaît comme
+# entièrement modifié dans les diffs — ce qui noierait les vraies
+# modifications, notamment celles des tables de data/processed/ qu'on suit
+# justement pour repérer les changements silencieux.
+* text=auto eol=lf
+
+# Classeurs et archives : binaires, git ne doit pas y toucher.
+*.xlsx binary
+*.xls  binary
+*.xltx binary
+*.zip  binary
+*.pdf  binary
+*.png  binary
+*.jpg  binary
+
+# Les CSV de NASA gardent leur encodage d'origine (cp1252 pour PSI-69,
+# UTF-8 avec BOM pour PSI-25 et PSI-26). Ils sont du texte, mais on ne
+# touche pas à leurs fins de ligne : ce sont des fichiers sources, pas
+# des fichiers du projet.
+combustion_science/**/*.csv -text

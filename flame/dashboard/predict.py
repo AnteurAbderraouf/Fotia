@@ -52,6 +52,12 @@ class Bundle:
     regressor: object | None = None
     regressor_columns: list[str] | None = None
     regressor_error: float = 0.0
+    # Constante de la loi en d2. Elle donne le RYTHME du retrecissement, la ou
+    # le regresseur precedent donne son point d'arrivee. Les deux ensemble
+    # decrivent toute l'histoire de la combustion.
+    rate_model: object | None = None
+    rate_columns: list[str] | None = None
+    rate_error: float = 0.0
 
 
 def _estimator(module: Module):
@@ -79,7 +85,8 @@ def build(module: Module) -> Bundle:
         interpretable = logistic(balanced=True).fit(X, y)
 
     regressor = regressor_columns = None
-    regressor_error = 0.0
+    rate_model = rate_columns = None
+    regressor_error = rate_error = 0.0
     if module.key == "suppression":
         from flame.models.extinction_diameter import model as diameter_model
         from flame.models.extinction_diameter import prepare, typical_error
@@ -88,6 +95,15 @@ def build(module: Module) -> Bundle:
         regressor = diameter_model().fit(diameter_X, diameter_y)
         regressor_columns = list(diameter_X.columns)
         regressor_error = typical_error()
+
+        from flame.models.droplet_burn import model as rate_estimator
+        from flame.models.droplet_burn import prepare as rate_prepare
+        from flame.models.droplet_burn import typical_error as rate_typical_error
+
+        rate_X, rate_y = rate_prepare()
+        rate_model = rate_estimator().fit(rate_X, rate_y)
+        rate_columns = list(rate_X.columns)
+        rate_error = rate_typical_error()
 
     return Bundle(
         module=module,
@@ -99,6 +115,9 @@ def build(module: Module) -> Bundle:
         regressor=regressor,
         regressor_columns=regressor_columns,
         regressor_error=regressor_error,
+        rate_model=rate_model,
+        rate_columns=rate_columns,
+        rate_error=rate_error,
     )
 
 
@@ -123,6 +142,15 @@ def predicted_diameter(bundle: Bundle, features: dict) -> float | None:
     row = pd.get_dummies(pd.DataFrame([features])[bundle.module.features])
     row = row.reindex(columns=bundle.regressor_columns, fill_value=0).astype(float)
     return float(bundle.regressor.predict(row)[0])
+
+
+def predicted_rate(bundle: Bundle, features: dict) -> float | None:
+    """Constante K de la loi en d², qui fixe le rythme du retrecissement."""
+    if bundle.rate_model is None:
+        return None
+    row = pd.get_dummies(pd.DataFrame([features])[bundle.module.features])
+    row = row.reindex(columns=bundle.rate_columns, fill_value=0).astype(float)
+    return max(float(bundle.rate_model.predict(row)[0]), 1e-3)
 
 
 def probability(bundle: Bundle, features: dict) -> float:

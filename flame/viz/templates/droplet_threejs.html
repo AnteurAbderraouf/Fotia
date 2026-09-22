@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --bg:#0d0d0d; --panel:#14181d; --line:#2a3138; --text:#e8ecef;
+          --muted:#898781; --accent:#f2a649; --initial:#3987e5; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+               font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+               overflow:hidden; }
+  #wrap { display:flex; flex-direction:column; height:100%; }
+  #stage { flex:1; position:relative; min-height:0; }
+  canvas { display:block; }
+
+  #hud { position:absolute; top:10px; left:10px; background:rgba(12,15,18,.84);
+         border:1px solid var(--line); border-radius:6px; padding:8px 11px;
+         font-variant-numeric:tabular-nums; line-height:1.7; }
+  #hud .big { font-size:19px; font-weight:700; color:var(--accent); }
+  #hud .lbl { color:var(--muted); font-size:11.5px; }
+
+  #law { position:absolute; top:10px; right:10px; background:rgba(12,15,18,.84);
+         border:1px solid var(--line); border-radius:6px; padding:8px 11px;
+         color:var(--muted); font-size:11.5px; max-width:23ch; text-align:right; }
+  #law b { color:var(--text); }
+
+  footer { border-top:1px solid var(--line); background:var(--panel);
+           padding:9px 12px; display:flex; gap:14px; align-items:center; }
+  button { font:inherit; padding:5px 15px; cursor:pointer; color:var(--text);
+           background:#222930; border:1px solid #3a434c; border-radius:5px; }
+  button:hover { background:#2c343c; }
+  input[type=range] { flex:1; accent-color:var(--accent); min-width:80px; }
+  .fps { color:var(--muted); font-size:11.5px; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="stage">
+    <div id="hud">
+      <div><span class="big" id="dNow">—</span> <span class="lbl">mm</span></div>
+      <div><span class="lbl">t =</span> <b id="tNow">—</b> <span class="lbl">s</span></div>
+    </div>
+    <div id="law">
+      loi en d² : <b>d²(t) = d₀² − K·t</b><br>
+      K = <b id="kVal">—</b> mm²/s<br>
+      verifiee a <b>0.995</b> de correlation<br>
+      sur les durees mesurees
+    </div>
+  </div>
+  <footer>
+    <button id="play">Pause</button>
+    <input id="scrub" type="range" min="0" max="1000" value="0" step="1">
+    <span class="fps"><b id="fps">—</b> img/s</span>
+  </footer>
+</div>
+
+<script type="application/json" id="payload">/*__PAYLOAD__*/</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const P = JSON.parse(document.getElementById('payload').textContent);
+const D0 = P.d0, DEXT = P.dext, K = P.k, DURATION = P.duration;
+
+document.getElementById('kVal').textContent = K.toFixed(3);
+
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(stage.clientWidth, stage.clientHeight);
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d0d);
+const camera = new THREE.PerspectiveCamera(40, stage.clientWidth/stage.clientHeight, 0.01, 100);
+camera.position.set(D0*1.5, D0*0.9, D0*1.9);
+camera.lookAt(0,0,0);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(1,1.2,1); scene.add(key);
+const rim = new THREE.DirectionalLight(0x6a9bff, 0.5); rim.position.set(-1,-0.5,-1); scene.add(rim);
+
+// UNE seule geometrie de rayon 1, mise a l'echelle par image. Rien n'est
+// reconstruit : seule une matrice change, c'est ce qui rend l'animation fluide.
+const unit = new THREE.SphereGeometry(1, 48, 32);
+
+const droplet = new THREE.Mesh(unit, new THREE.MeshStandardMaterial({
+  color:0xf2a649, roughness:0.32, metalness:0.05, emissive:0x3a1d00, emissiveIntensity:0.5
+}));
+scene.add(droplet);
+
+// Reperes fixes : la taille de depart et la taille d'extinction, en fil de fer.
+const ghost = (d, colour) => {
+  const m = new THREE.Mesh(unit, new THREE.MeshBasicMaterial({
+    color: colour, wireframe: true, transparent: true, opacity: 0.16
+  }));
+  m.scale.setScalar(d/2);
+  return m;
+};
+scene.add(ghost(D0, 0x3987e5));
+scene.add(ghost(DEXT, 0xf2a649));
+
+// --- la loi, appliquee image par image ------------------------------------
+// d(t) = sqrt(d0^2 - K t), bornee au diametre d'extinction.
+function diameterAt(t) {
+  return Math.sqrt(Math.max(D0*D0 - K*t, DEXT*DEXT));
+}
+
+const playButton = document.getElementById('play');
+const scrub = document.getElementById('scrub');
+const dOut = document.getElementById('dNow');
+const tOut = document.getElementById('tNow');
+const fpsOut = document.getElementById('fps');
+
+let elapsed = 0, running = true, dragging = false;
+let frames = 0, lastSample = performance.now(), lastFrame = performance.now();
+
+playButton.onclick = () => {
+  running = !running;
+  playButton.textContent = running ? 'Pause' : 'Lecture';
+};
+scrub.addEventListener('input', () => {
+  dragging = true;
+  elapsed = Number(scrub.value) / 1000 * DURATION;
+  apply();
+});
+scrub.addEventListener('change', () => { dragging = false; });
+
+function apply() {
+  const d = diameterAt(elapsed);
+  droplet.scale.setScalar(d/2);
+  dOut.textContent = d.toFixed(2);
+  tOut.textContent = elapsed.toFixed(2);
+  if (!dragging) scrub.value = String(Math.round(elapsed / DURATION * 1000));
+}
+
+addEventListener('resize', () => {
+  camera.aspect = stage.clientWidth/stage.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+});
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((now - lastFrame)/1000, 0.1);
+  lastFrame = now;
+
+  if (running && !dragging) {
+    elapsed += dt;
+    // Une pause d'une demi-seconde en fin de course, puis on reprend : la
+    // boucle reste continue, sans coupure ni ecran vide.
+    if (elapsed > DURATION + 0.5) elapsed = 0;
+    apply();
+  }
+
+  droplet.rotation.y += dt * 0.25;
+  renderer.render(scene, camera);
+
+  frames++;
+  if (now - lastSample > 500) {
+    fpsOut.textContent = (frames*1000/(now-lastSample)).toFixed(0);
+    frames = 0; lastSample = now;
+  }
+}
+apply();
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

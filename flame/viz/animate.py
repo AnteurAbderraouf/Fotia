@@ -84,6 +84,57 @@ def _coarse_plane(field: np.ndarray, axis_x, axis_y, colorscale: str) -> go.Surf
     )
 
 
+
+CAMERA_LOOP_JS = """
+(function () {
+  var gd = document.getElementById('{plot_id}');
+  var angle = 0, running = false;
+  var RADIUS = 2.1, HEIGHT = 0.75, SPEED = 0.010;
+  var frames = 0, last = performance.now();
+
+  var bar = document.createElement('div');
+  bar.style.cssText = 'font:13px system-ui;padding:8px 12px;display:flex;' +
+                      'gap:14px;align-items:center;background:#111;color:#eee';
+  var button = document.createElement('button');
+  button.textContent = 'Lecture';
+  button.style.cssText = 'font:13px system-ui;padding:5px 16px;cursor:pointer;' +
+                         'background:#2a2a2a;color:#eee;border:1px solid #555;border-radius:4px';
+  var meter = document.createElement('span');
+  meter.textContent = 'images/s : —';
+  meter.style.opacity = '0.75';
+  var note = document.createElement('span');
+  note.textContent = 'la camera tourne, la scene ne change pas';
+  note.style.cssText = 'opacity:0.5;margin-left:auto';
+  bar.appendChild(button); bar.appendChild(meter); bar.appendChild(note);
+  gd.parentNode.insertBefore(bar, gd);
+
+  button.onclick = function () {
+    running = !running;
+    button.textContent = running ? 'Pause' : 'Lecture';
+    if (running) { last = performance.now(); frames = 0; requestAnimationFrame(step); }
+  };
+
+  function step() {
+    if (!running) return;
+    angle += SPEED;
+    Plotly.relayout(gd, {
+      'scene.camera.eye': {
+        x: RADIUS * Math.cos(angle),
+        y: RADIUS * Math.sin(angle),
+        z: HEIGHT
+      }
+    });
+    frames++;
+    var now = performance.now();
+    if (now - last > 500) {
+      meter.textContent = 'images/s : ' + (frames * 1000 / (now - last)).toFixed(1);
+      frames = 0; last = now;
+    }
+    requestAnimationFrame(step);
+  }
+})();
+"""
+
 def _resample(curve: np.ndarray, count: int) -> np.ndarray:
     if len(curve) <= count:
         return curve
@@ -239,10 +290,23 @@ def sweep(variable: str = "Smoke", burner_size_cm: int = 8) -> go.Figure:
 
 
 def orbit(variable: str = "Smoke", burner_size_cm: int = 8) -> go.Figure:
-    """Rotation de caméra autour d'une scène entièrement figée.
+    """Rotation de caméra — sans passer par les images de plotly.
 
-    Aucune donnée ne change d'une image à l'autre : seule la position de
-    l'observateur tourne. C'est de la présentation, assumée comme telle.
+    POURQUOI CETTE VERSION EXISTE. La première faisait tourner la caméra avec
+    le système d'images de plotly : 48 images ne contenant rien d'autre qu'une
+    position d'observateur, et c'était quand même lent. La raison est que
+    `Plotly.animate` impose `redraw` en 3D — la scène entière est reconstruite
+    en JavaScript à chaque image, même quand aucune donnée ne change.
+
+    Faire tourner la scène à la souris, en revanche, est fluide : ce geste ne
+    reconstruit rien, il met seulement à jour la matrice de vue. Cette version
+    emprunte ce chemin-là. Un script injecté appelle `Plotly.relayout` sur la
+    seule caméra, dans une boucle `requestAnimationFrame` — exactement ce que
+    fait un glisser de souris, en automatique.
+
+    La figure ne contient donc AUCUNE image. Le compteur affiché dans la page
+    mesure le nombre d'images par seconde réellement obtenu, pour qu'on juge
+    sur un chiffre plutôt qu'à l'impression.
     """
     label, colorscale, level = FIELD_STYLES[variable]
     axis_x, axis_y = load_mesh()
@@ -253,33 +317,21 @@ def orbit(variable: str = "Smoke", burner_size_cm: int = 8) -> go.Figure:
     curve = _resample(
         max(_isocontour(field, axis_x, axis_y, level), key=len), ANIM_POINTS
     )
-    surface = _revolved_surface(curve, colorscale)
-    plane = _coarse_plane(field, axis_x, axis_y, colorscale)
 
-    radius, height = 2.1, 0.75
-    frames = [
-        go.Frame(
-            layout=dict(
-                scene_camera=dict(
-                    eye=dict(
-                        x=radius * np.cos(angle),
-                        y=radius * np.sin(angle),
-                        z=height,
-                    )
-                )
-            ),
-            name=f"{int(np.degrees(angle))}",
-        )
-        for angle in np.linspace(0, 2 * np.pi, ORBIT_FRAMES, endpoint=False)
-    ]
-
-    figure = go.Figure(data=[surface, plane], frames=frames)
+    figure = go.Figure(
+        data=[
+            _revolved_surface(curve, colorscale),
+            _coarse_plane(field, axis_x, axis_y, colorscale),
+        ]
+    )
     figure.update_layout(
         title=dict(
             text=(
                 f"PSI-115 — {label}, microgravite, bruleur {burner_size_cm} cm"
                 f"<br><sub>SEULE LA CAMERA TOURNE. Isosurface fixe a {level:g},"
                 " champ stationnaire : rien dans les donnees ne bouge."
+                "<br>Rotation par relayout de la camera, sans reconstruction de"
+                " scene — le meme chemin qu'un glisser de souris."
                 "<br>Simulation numerique, unites normalisees.</sub>"
             ),
             x=0.01,
@@ -290,41 +342,9 @@ def orbit(variable: str = "Smoke", burner_size_cm: int = 8) -> go.Figure:
             yaxis_title="y (u. norm.)",
             zaxis_title="z (u. norm.)",
             aspectmode="data",
-            camera=dict(eye=dict(x=radius, y=0, z=height)),
+            camera=dict(eye=dict(x=2.1, y=0, z=0.75)),
         ),
-        updatemenus=[
-            dict(
-                type="buttons",
-                direction="left",
-                x=0.02,
-                y=0.02,
-                xanchor="left",
-                buttons=[
-                    dict(
-                        label="Lecture",
-                        method="animate",
-                        args=[
-                            None,
-                            dict(
-                                frame=dict(duration=70, redraw=True),
-                                fromcurrent=True,
-                                transition=dict(duration=0),
-                                mode="immediate",
-                            ),
-                        ],
-                    ),
-                    dict(
-                        label="Pause",
-                        method="animate",
-                        args=[
-                            [None],
-                            dict(frame=dict(duration=0, redraw=False), mode="immediate"),
-                        ],
-                    ),
-                ],
-            )
-        ],
-        margin=dict(l=0, r=0, t=110, b=60),
+        margin=dict(l=0, r=0, t=110, b=10),
         height=760,
         template="plotly_dark",
     )
@@ -335,14 +355,26 @@ def main() -> None:
     output = Path("data/figures")
     output.mkdir(parents=True, exist_ok=True)
 
-    for name, builder in [("sweep", sweep), ("orbit", orbit)]:
-        figure = builder(variable="Smoke", burner_size_cm=8)
-        destination = output / f"psi115_anim_{name}.html"
-        figure.write_html(destination, include_plotlyjs="cdn", auto_play=False)
-        print(
-            f"  {destination}  ({destination.stat().st_size / 1024:.0f} Ko, "
-            f"{len(figure.frames)} images)"
-        )
+    sweep_figure = sweep(variable="Smoke", burner_size_cm=8)
+    sweep_path = output / "psi115_anim_sweep.html"
+    sweep_figure.write_html(sweep_path, include_plotlyjs="cdn", auto_play=False)
+    print(
+        f"  {sweep_path}  ({sweep_path.stat().st_size / 1024:.0f} Ko, "
+        f"{len(sweep_figure.frames)} images)"
+    )
+
+    orbit_figure = orbit(variable="Smoke", burner_size_cm=8)
+    orbit_path = output / "psi115_anim_orbit.html"
+    orbit_figure.write_html(
+        orbit_path,
+        include_plotlyjs="cdn",
+        auto_play=False,
+        post_script=CAMERA_LOOP_JS,
+    )
+    print(
+        f"  {orbit_path}  ({orbit_path.stat().st_size / 1024:.0f} Ko, "
+        "0 image : la camera bouge, la scene non)"
+    )
 
     print(
         "\n  sweep : le seuil de decoupe varie, le champ non."

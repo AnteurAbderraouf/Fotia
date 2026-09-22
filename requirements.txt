@@ -13,9 +13,9 @@ numpy>=2.5           # réduction des grilles CFD de PSI-115
 openpyxl>=3.1        # classeurs .xlsx (PSI-39, PSI-101, PSI-107, PSI-142)
 xlrd>=2.0            # anciens classeurs .xls (PSI-107)
 
-# --- Phase « modélisation » : pas encore installé ---
-# scikit-learn>=1.5  # régression logistique, arbres, courbes d'apprentissage
-# matplotlib>=3.9    # figures d'évaluation
+# --- Phase « modélisation » : en place ---
+scikit-learn>=1.9    # régression logistique, arbres, courbes d'apprentissage
+matplotlib>=3.11     # figures d'évaluation
 
 # --- Phase « dashboard » : pas encore installé ---
 # streamlit>=1.40

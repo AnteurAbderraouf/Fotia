@@ -113,6 +113,43 @@ All of it is public and re-downloadable from
 reconstruct NASA's folder structure from the bulk-download archives, which are
 flattened on the way out.
 
+## Licence et provenance des données
+
+Le **code** de ce dépôt — `flame/`, `scripts/` — est publié sous licence MIT,
+voir `LICENSE`.
+
+Les **données** ne sont pas couvertes par cette licence, parce qu'elles ne
+nous appartiennent pas. Les fichiers de `combustion_science/**/csv/` et le
+texte des `info.md` proviennent du NASA Physical Sciences Informatics data
+repository, [psi.nasa.gov](https://psi.nasa.gov). Les œuvres du gouvernement
+fédéral américain ne sont pas soumises au copyright aux États-Unis
+(17 U.S.C. § 105) ; elles sont redistribuées ici telles quelles, sans
+modification, et les descriptions NASA sont reproduites verbatim.
+
+Deux jeux de données contiennent des mesures publiées par ailleurs dans des
+articles à comité de lecture. NASA les diffuse sur psi.nasa.gov, et les
+mesures elles-mêmes sont des faits, non des œuvres protégeables — mais les
+travaux méritent d'être cités :
+
+**PSI-117** — les fichiers sont les données derrière les figures de
+- Reuter et al., *Proceedings of the Combustion Institute* 37 (2019),
+  [10.1016/j.proci.2018.05.151](https://doi.org/10.1016/j.proci.2018.05.151)
+- *Proceedings of the Combustion Institute* 37 (2019),
+  [10.1016/j.proci.2018.09.015](https://doi.org/10.1016/j.proci.2018.09.015)
+- *Proceedings of the Combustion Institute* 39 (2023),
+  [10.1016/j.proci.2022.07.094](https://doi.org/10.1016/j.proci.2022.07.094)
+- *Microgravity Science and Technology* (2024),
+  [10.1007/s12217-024-10115-x](https://doi.org/10.1007/s12217-024-10115-x)
+
+**PSI-142** — brûleur à contre-courant de Princeton
+- C.B. Reuter et al., *Combustion and Flame* 179 (2017) 23–32
+- C.B. Reuter et al., *Proc. Combustion Institute* 37 (2019) 1851
+- O.R. Yehia et al., *Combustion and Flame* 195 (2018) 63–74
+- O.R. Yehia et al., *Proc. Combustion Institute* 37 (2019) 1717
+
+Le nom et l'insigne de NASA sont protégés séparément et ne figurent nulle part
+dans ce dépôt. Rien ici ne constitue une approbation par NASA.
+
 ## Status
 
 Data collection and cleaning are complete. Baseline models and the dashboard

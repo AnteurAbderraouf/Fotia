@@ -54,6 +54,7 @@ from flame.dashboard.registry import (  # noqa: E402
 )
 from flame.models.droplet_burn import burn_duration  # noqa: E402
 from flame.viz.droplet_anim import page as droplet_page  # noqa: E402
+from flame.viz.droplet_live import page as live_page  # noqa: E402
 
 st.set_page_config(page_title="Fotia — combustion en microgravite", layout="wide")
 
@@ -128,9 +129,35 @@ st.caption(f"**{module.question}**  ·  {module.regime}")
 if module.note:
     st.caption(module.note)
 
-tab_predict, tab_coverage, tab_modules, tab_about = st.tabs(
-    ["Prediction", "Ou sont les essais", "Couverture des modules", "Methode"]
-)
+tabs = ["Prediction", "Ou sont les essais", "Couverture des modules", "Methode"]
+if choice == "suppression":
+    tabs.insert(0, "La flamme, en direct")
+rendered = st.tabs(tabs)
+if choice == "suppression":
+    tab_live, tab_predict, tab_coverage, tab_modules, tab_about = rendered
+else:
+    tab_live = None
+    tab_predict, tab_coverage, tab_modules, tab_about = rendered
+
+# ---------------------------------------------------------------------------
+# Onglet interactif : tout se calcule dans le navigateur, donc sans coupure.
+# ---------------------------------------------------------------------------
+if tab_live is not None:
+    with tab_live:
+        st.caption(
+            "Les curseurs sont **dans la vue**. Streamlit relance tout le script a "
+            "chaque reglage, ce qui recreait l'iframe et produisait un blanc puis un "
+            "saut ; ici les trois modeles — tous lineaires, donc reductibles a un "
+            "produit scalaire — sont calcules par la page elle-meme. Rien ne repasse "
+            "par le serveur, et la gouttelette glisse d'un etat a l'autre."
+        )
+        components.html(live_page(data), height=560, scrolling=False)
+        st.caption(
+            "Le retrecissement suit la **loi en d²** : d²(t) = d₀² − K·t, verifiee "
+            "sur les durees mesurees a 0.995 de correlation. Le voyant de distance "
+            "et les essais voisins sont recalcules dans la page a partir des 206 "
+            "essais embarques : mêmes seuils, mêmes donnees qu'en Python."
+        )
 
 # ---------------------------------------------------------------------------
 with tab_predict:

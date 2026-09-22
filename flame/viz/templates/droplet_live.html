@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --bg:#0d0d0d; --panel:#14181d; --line:#2a3138; --text:#e8ecef;
+          --muted:#898781; --accent:#f2a649; --initial:#3987e5;
+          --good:#0ca30c; --warn:#fab219; --bad:#d03b3b; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+               font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+               overflow:hidden; }
+  #app { display:grid; grid-template-columns:250px 1fr; height:100%; }
+
+  #panel { background:var(--panel); border-right:1px solid var(--line);
+           padding:12px 14px; overflow-y:auto; }
+  #panel h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase;
+              letter-spacing:.06em; color:var(--muted); font-weight:600; }
+  .ctl { margin-bottom:11px; }
+  .ctl label { display:flex; justify-content:space-between; font-size:12px;
+               color:var(--muted); margin-bottom:3px; }
+  .ctl label b { color:var(--text); font-variant-numeric:tabular-nums; }
+  input[type=range] { width:100%; accent-color:var(--accent); margin:0; }
+  select { width:100%; font:inherit; padding:4px 6px; background:#222930;
+           color:var(--text); border:1px solid #3a434c; border-radius:4px; }
+  .note { color:var(--muted); font-size:11px; margin-top:8px; line-height:1.45; }
+
+  #stage { position:relative; min-width:0; }
+  canvas { display:block; }
+
+  #readout { position:absolute; top:12px; left:12px; display:flex; gap:9px; }
+  .card { background:rgba(12,15,18,.86); border:1px solid var(--line);
+          border-radius:6px; padding:7px 11px; min-width:96px; }
+  .card .k { color:var(--muted); font-size:10.5px; text-transform:uppercase;
+             letter-spacing:.05em; }
+  .card .v { font-size:20px; font-weight:700; font-variant-numeric:tabular-nums;
+             line-height:1.25; }
+  .card .u { color:var(--muted); font-size:10.5px; }
+
+  #verdict { position:absolute; top:12px; right:12px; padding:6px 12px;
+             border-radius:6px; font-weight:700; font-size:12px; color:#0d0d0d; }
+  #why { position:absolute; top:44px; right:12px; max-width:27ch; text-align:right;
+         color:var(--muted); font-size:11px; line-height:1.45; }
+
+  #time { position:absolute; bottom:12px; left:12px; right:12px;
+          display:flex; gap:11px; align-items:center;
+          background:rgba(12,15,18,.86); border:1px solid var(--line);
+          border-radius:6px; padding:7px 11px; }
+  button { font:inherit; padding:4px 13px; cursor:pointer; color:var(--text);
+           background:#222930; border:1px solid #3a434c; border-radius:4px; }
+  button:hover { background:#2c343c; }
+  #scrub { flex:1; }
+  .small { color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums;
+           white-space:nowrap; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <h3>Conditions</h3>
+    <div class="ctl"><label>Carburant</label><select id="fuel"></select></div>
+    <div class="ctl"><label>Oxygene <b id="o2v"></b></label><input id="o2" type="range"></div>
+    <div class="ctl"><label>CO2 ajoute <b id="co2v"></b></label><input id="co2" type="range"></div>
+    <div class="ctl"><label>Helium ajoute <b id="hev"></b></label><input id="he" type="range"></div>
+    <div class="ctl"><label>Pression <b id="pv"></b></label><input id="p" type="range"></div>
+    <div class="ctl"><label>Diametre initial <b id="d0v"></b></label><input id="d0" type="range"></div>
+    <div class="note" id="n2note"></div>
+    <div class="note">
+      Tout est calcule dans cette page : les trois modeles sont lineaires, donc
+      un produit scalaire. Rien ne repasse par le serveur, d'ou l'absence de
+      coupure.
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="readout">
+      <div class="card"><div class="k">extinction</div>
+        <div class="v" id="pExt">—</div><div class="u">probabilite</div></div>
+      <div class="card"><div class="k">diametre final</div>
+        <div class="v" id="dExt">—</div><div class="u" id="dErr">mm</div></div>
+      <div class="card"><div class="k">vitesse K</div>
+        <div class="v" id="kVal">—</div><div class="u" id="kErr">mm²/s</div></div>
+      <div class="card"><div class="k">duree</div>
+        <div class="v" id="dur">—</div><div class="u">s, loi en d²</div></div>
+    </div>
+    <div id="verdict">—</div>
+    <div id="why"></div>
+    <div id="time">
+      <button id="play">Pause</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0">
+      <span class="small">t = <b id="tNow">0.00</b> s · d = <b id="dNow">—</b> mm
+        · <b id="fps">—</b> img/s</span>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="payload">/*__PAYLOAD__*/</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const P = JSON.parse(document.getElementById('payload').textContent);
+
+// --- les modeles, recalcules ici -------------------------------------------
+// Un modele lineaire mis a l'echelle est un produit scalaire. La sigmoide
+// n'est ajoutee que pour le classifieur.
+function linear(spec, row) {
+  let total = spec.intercept;
+  for (let i = 0; i < spec.columns.length; i++) {
+    const x = row[spec.columns[i]] ?? 0;
+    total += ((x - spec.mean[i]) / spec.scale[i]) * spec.coef[i];
+  }
+  return total;
+}
+const sigmoid = z => 1 / (1 + Math.exp(-z));
+
+// --- distance au plus proche essai reel ------------------------------------
+function proximity(row) {
+  const pr = P.proximity;
+  const z = pr.features.map((f, i) => ((row[f] ?? 0) - pr.mean[i]) / pr.scale[i]);
+  let best = Infinity, bestIndex = -1;
+  const order = [];
+  for (let n = 0; n < pr.points.length; n++) {
+    if (P.tests[n].fuel !== row.__fuel) continue;
+    let sum = 0;
+    for (let i = 0; i < z.length; i++) { const d = pr.points[n][i] - z[i]; sum += d*d; }
+    const dist = Math.sqrt(sum);
+    order.push([dist, n]);
+    if (dist < best) { best = dist; bestIndex = n; }
+  }
+  let outOfRange = false;
+  for (const [name, r] of Object.entries(P.ranges)) {
+    const v = name === 'pressure_atm' ? row.__pressureAtm : row[name];
+    if (v < r.min || v > r.max) outOfRange = true;
+  }
+  let verdict = 'extrapolation';
+  if (outOfRange || best > pr.largest) verdict = 'outside';
+  else if (best <= pr.typical) verdict = 'inside';
+  order.sort((a,b) => a[0]-b[0]);
+  return { verdict, distance: best, nearest: bestIndex, order, outOfRange };
+}
+
+const VERDICTS = {
+  inside:        ['#0ca30c', 'Dans le domaine teste'],
+  extrapolation: ['#fab219', 'Extrapolation'],
+  outside:       ['#d03b3b', 'Hors du domaine teste']
+};
+
+// --- commandes --------------------------------------------------------------
+const el = id => document.getElementById(id);
+const fuelSel = el('fuel');
+P.fuels.forEach(f => { const o = document.createElement('option');
+                       o.value = o.textContent = f; fuelSel.appendChild(o); });
+
+function setupRange(input, spec, initial, step) {
+  input.min = spec.min; input.max = spec.max; input.step = step;
+  input.value = initial;
+}
+setupRange(el('o2'),  P.ranges.o2_frac,      0.21, 0.005);
+setupRange(el('co2'), P.ranges.co2_frac,     0.00, 0.005);
+setupRange(el('he'),  P.ranges.he_frac,      0.00, 0.005);
+setupRange(el('p'),   P.ranges.pressure_atm, 1.00, 0.01);
+setupRange(el('d0'),  P.ranges.d0_mm,        2.50, 0.01);
+
+// --- scene ------------------------------------------------------------------
+const stage = el('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(stage.clientWidth, stage.clientHeight);
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d0d);
+const camera = new THREE.PerspectiveCamera(40, stage.clientWidth/stage.clientHeight, 0.01, 200);
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const key = new THREE.DirectionalLight(0xffffff, 1.6); key.position.set(1,1.2,1); scene.add(key);
+const rim = new THREE.DirectionalLight(0x6a9bff, 0.5); rim.position.set(-1,-0.5,-1); scene.add(rim);
+
+// UNE geometrie de rayon 1. Tout le reste n'est qu'une matrice d'echelle :
+// c'est ce qui permet de changer les parametres sans rien reconstruire.
+const unit = new THREE.SphereGeometry(1, 48, 32);
+const droplet = new THREE.Mesh(unit, new THREE.MeshStandardMaterial({
+  color:0xf2a649, roughness:0.32, metalness:0.05,
+  emissive:0x3a1d00, emissiveIntensity:0.5 }));
+scene.add(droplet);
+const ghostStart = new THREE.Mesh(unit, new THREE.MeshBasicMaterial({
+  color:0x3987e5, wireframe:true, transparent:true, opacity:0.15 }));
+const ghostEnd = new THREE.Mesh(unit, new THREE.MeshBasicMaterial({
+  color:0xf2a649, wireframe:true, transparent:true, opacity:0.2 }));
+scene.add(ghostStart); scene.add(ghostEnd);
+
+// --- etat : cible (les curseurs) et affiche (ce qu'on voit) -----------------
+// L'ecart entre les deux est ce qui supprime les sauts : l'affiche rejoint la
+// cible en glissant, au lieu de s'y teleporter.
+const target = { d0:2.5, dext:1.2, k:0.5, duration:10 };
+const shown  = { d0:2.5, dext:1.2, k:0.5, duration:10 };
+
+function recompute() {
+  const fuel = fuelSel.value;
+  const o2 = +el('o2').value, co2 = +el('co2').value, he = +el('he').value;
+  const pAtm = +el('p').value, d0 = +el('d0').value;
+
+  el('o2v').textContent  = o2.toFixed(3);
+  el('co2v').textContent = co2.toFixed(3);
+  el('hev').textContent  = he.toFixed(3);
+  el('pv').textContent   = pAtm.toFixed(2) + ' atm';
+  el('d0v').textContent  = d0.toFixed(2) + ' mm';
+  const n2 = 1 - o2 - co2 - he;
+  el('n2note').textContent = n2 < 0
+    ? 'Les fractions molaires somment a plus de 1 : melange impossible.'
+    : 'azote de complement : ' + n2.toFixed(2);
+  el('n2note').style.color = n2 < 0 ? '#d03b3b' : '';
+
+  const row = {
+    pressure_mmhg: pAtm * 760, o2_frac:o2, co2_frac:co2, he_frac:he, d0_mm:d0,
+    fuel_Methanol: fuel === 'Methanol' ? 1 : 0,
+    __fuel: fuel, __pressureAtm: pAtm
+  };
+
+  const pExt = sigmoid(linear(P.models.extinction, row));
+  const dext = Math.max(Math.min(linear(P.models.diameter, row), d0 * 0.99), 0.02);
+  const k = Math.max(linear(P.models.rate, row), 0.01);
+  const duration = Math.max((d0*d0 - dext*dext) / k, 0.1);
+
+  el('pExt').textContent = (pExt*100).toFixed(0) + '%';
+  el('dExt').textContent = dext.toFixed(2);
+  el('dErr').textContent = 'mm ± ' + P.errors.diameter.toFixed(2);
+  el('kVal').textContent = k.toFixed(3);
+  el('kErr').textContent = 'mm²/s ± ' + P.errors.rate.toFixed(3);
+  el('dur').textContent = duration.toFixed(1);
+
+  const prox = proximity(row);
+  const [colour, text] = VERDICTS[prox.verdict];
+  const badge = el('verdict');
+  badge.style.background = colour; badge.textContent = text;
+  const near = P.tests[prox.nearest];
+  el('why').innerHTML = prox.verdict === 'inside'
+    ? `essai le plus proche : ${near.fuel}, O2 ${near.o2_frac}, CO2 ${near.co2_frac},
+       d0 ${near.d0_mm} mm &rarr; <b>${near.test_end}</b>`
+    : (prox.outOfRange
+        ? 'au moins une valeur sort de la plage essayee par NASA'
+        : `l'essai le plus proche est ${(prox.distance/P.proximity.typical).toFixed(1)}
+           fois plus loin que d'ordinaire`);
+
+  Object.assign(target, { d0, dext, k, duration });
+}
+
+['o2','co2','he','p','d0'].forEach(id => el(id).addEventListener('input', recompute));
+fuelSel.addEventListener('change', recompute);
+
+// --- boucle -----------------------------------------------------------------
+let elapsed = 0, running = true, dragging = false;
+let frames = 0, lastSample = performance.now(), lastFrame = performance.now();
+
+el('play').onclick = function () {
+  running = !running; this.textContent = running ? 'Pause' : 'Lecture';
+};
+el('scrub').addEventListener('input', () => {
+  dragging = true; elapsed = +el('scrub').value / 1000 * shown.duration;
+});
+el('scrub').addEventListener('change', () => { dragging = false; });
+
+addEventListener('resize', () => {
+  camera.aspect = stage.clientWidth/stage.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+});
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((now - lastFrame)/1000, 0.1);
+  lastFrame = now;
+
+  // L'etat affiche rejoint la cible en glissant. Un changement de curseur
+  // deforme donc la trajectoire au lieu de la couper.
+  const ease = 1 - Math.pow(0.002, dt);
+  const progress = shown.duration > 0 ? elapsed / shown.duration : 0;
+  for (const key of ['d0','dext','k','duration']) {
+    shown[key] += (target[key] - shown[key]) * ease;
+  }
+  if (!dragging) elapsed = progress * shown.duration;
+
+  if (running && !dragging) {
+    elapsed += dt;
+    if (elapsed > shown.duration + 0.4) elapsed = 0;
+  }
+
+  const d = Math.sqrt(Math.max(shown.d0*shown.d0 - shown.k*elapsed,
+                               shown.dext*shown.dext));
+  droplet.scale.setScalar(d/2);
+  ghostStart.scale.setScalar(shown.d0/2);
+  ghostEnd.scale.setScalar(shown.dext/2);
+  droplet.rotation.y += dt * 0.25;
+
+  const reach = shown.d0 * 1.55;
+  camera.position.set(reach*0.78, reach*0.46, reach);
+  camera.lookAt(0,0,0);
+
+  el('tNow').textContent = elapsed.toFixed(2);
+  el('dNow').textContent = d.toFixed(2);
+  if (!dragging) el('scrub').value = String(Math.round(elapsed/shown.duration*1000));
+
+  renderer.render(scene, camera);
+
+  frames++;
+  if (now - lastSample > 500) {
+    el('fps').textContent = (frames*1000/(now-lastSample)).toFixed(0);
+    frames = 0; lastSample = now;
+  }
+}
+recompute();
+Object.assign(shown, target);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

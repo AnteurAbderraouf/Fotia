@@ -17,5 +17,9 @@ xlrd>=2.0            # anciens classeurs .xls (PSI-107)
 scikit-learn>=1.9    # régression logistique, arbres, courbes d'apprentissage
 matplotlib>=3.11     # figures d'évaluation
 
-# --- Phase « dashboard » : pas encore installé ---
-# streamlit>=1.40
+# --- Phase « dashboard » : en place ---
+streamlit>=1.60      # le tableau de bord, app/main.py
+plotly>=7.0          # graphes interactifs et vues 3D fixes
+pillow>=11.0         # textures du rendu Three.js
+
+# Three.js est charge depuis un CDN dans la page generee, pas installe ici.

@@ -37,12 +37,10 @@ import plotly.graph_objects as go
 from flame.loaders.psi115 import load_mesh
 from flame.viz.plume3d import (
     FIELD_STYLES,
-    PLANE_STEP,
     SWEEP_DEGREES,
     _check_axisymmetry,
     _isocontour,
     _load_field,
-    _plane,
 )
 
 # Resolution reduite : chaque image est stockee dans la page.
@@ -55,6 +53,35 @@ DECIMALS = 4
 ORBIT_FRAMES = 48
 # Seuil le plus bas du balayage, en fraction du maximum du champ.
 LOWEST_LEVEL_FRACTION = 0.025
+# Pas d'echantillonnage du plan EN ANIMATION, plus grossier que pour la vue
+# fixe. En 3D, plotly impose redraw=True a chaque image : il reconstruit toute
+# la scene en JavaScript au lieu de ne mettre a jour que ce qui change. Le plan
+# ne bouge jamais mais il est reconstruit quand meme, et au pas de la vue fixe
+# il pesait 14 400 des 18 800 sommets — 77 % du cout par image, pour une
+# surface immobile. A ce pas-ci il en pese 3 600.
+ANIM_PLANE_STEP = 8
+
+
+def _coarse_plane(field: np.ndarray, axis_x, axis_y, colorscale: str) -> go.Surface:
+    """Le plan de coupe, echantillonne plus grossierement qu'en vue fixe.
+
+    Il est immobile, mais plotly le reconstruit a chaque image : autant qu'il
+    coute le moins possible. Au pas retenu il reste parfaitement lisible.
+    """
+    sliced = field[::ANIM_PLANE_STEP, ::ANIM_PLANE_STEP]
+    plane_x, plane_y = np.meshgrid(
+        axis_x[::ANIM_PLANE_STEP], axis_y[::ANIM_PLANE_STEP]
+    )
+    return go.Surface(
+        x=np.round(plane_x, DECIMALS),
+        y=np.round(plane_y, DECIMALS),
+        z=np.zeros_like(plane_x),
+        surfacecolor=np.round(sliced, DECIMALS),
+        colorscale=colorscale,
+        showscale=True,
+        colorbar=dict(title=dict(text="valeur", side="right"), thickness=12),
+        hovertemplate="x %{x:.2f}<br>y %{y:.2f}<br>valeur %{surfacecolor:.3f}<extra></extra>",
+    )
 
 
 def _resample(curve: np.ndarray, count: int) -> np.ndarray:
@@ -126,7 +153,7 @@ def sweep(variable: str = "Smoke", burner_size_cm: int = 8) -> go.Figure:
         raise ValueError(f"{case} : aucun contour sur la plage de seuils demandee")
 
     figure = go.Figure(
-        data=[first_surface, _plane(field, axis_x, axis_y, colorscale, True)],
+        data=[first_surface, _coarse_plane(field, axis_x, axis_y, colorscale)],
         frames=frames,
     )
 
@@ -227,7 +254,7 @@ def orbit(variable: str = "Smoke", burner_size_cm: int = 8) -> go.Figure:
         max(_isocontour(field, axis_x, axis_y, level), key=len), ANIM_POINTS
     )
     surface = _revolved_surface(curve, colorscale)
-    plane = _plane(field, axis_x, axis_y, colorscale, True)
+    plane = _coarse_plane(field, axis_x, axis_y, colorscale)
 
     radius, height = 2.1, 0.75
     frames = [

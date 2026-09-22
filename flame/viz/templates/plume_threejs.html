@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panache PSI-115</title>
+<style>
+  :root {
+    --bg: #0b0d10;
+    --panel: #14181d;
+    --line: #2a3138;
+    --text: #e8ecef;
+    --muted: #8b96a0;
+    --accent: #f2a649;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+               font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #app { display: flex; flex-direction: column; height: 100%; }
+
+  header { padding: 14px 18px 12px; border-bottom: 1px solid var(--line); }
+  h1 { margin: 0 0 6px; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .caveat { color: var(--muted); font-size: 12.5px; max-width: 105ch; }
+  .caveat strong { color: #c9d2da; font-weight: 600; }
+
+  #stage { flex: 1; position: relative; min-height: 0; }
+  canvas { display: block; }
+
+  #hud { position: absolute; top: 12px; left: 12px; background: rgba(12,15,18,.82);
+         border: 1px solid var(--line); border-radius: 6px; padding: 9px 12px;
+         font-variant-numeric: tabular-nums; font-size: 12.5px; }
+  #hud b { color: var(--accent); font-weight: 600; }
+  #hud span { color: var(--muted); }
+
+  footer { border-top: 1px solid var(--line); background: var(--panel);
+           padding: 11px 18px; display: flex; gap: 18px; align-items: center;
+           flex-wrap: wrap; }
+  button { font: inherit; padding: 6px 16px; cursor: pointer; color: var(--text);
+           background: #222930; border: 1px solid #3a434c; border-radius: 5px; }
+  button:hover { background: #2c343c; }
+  button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); }
+  label { display: flex; align-items: center; gap: 9px; color: var(--muted);
+          font-size: 13px; }
+  input[type=range] { width: 230px; accent-color: var(--accent); }
+  .value { color: var(--text); font-variant-numeric: tabular-nums; min-width: 4.5ch; }
+  .spacer { margin-left: auto; color: var(--muted); font-size: 12px; }
+
+  @media (max-width: 720px) {
+    footer { gap: 12px; }
+    input[type=range] { width: 150px; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1 id="title">PSI-115 — panache de fumee, microgravite</h1>
+    <p class="caveat">
+      <strong>Le champ ne bouge pas.</strong> Le balayage fait varier le seuil de
+      decoupe de l'isosurface, la rotation deplace l'observateur. Chaque image est
+      une isosurface reelle du meme etat stationnaire : PSI-115 ne contient aucune
+      serie temporelle, donc rien ici n'est une combustion filmee.
+      <strong>Revolution licite</strong> parce que le cas en microgravite est
+      axisymetrique — sur Terre la gravite designe une direction et la symetrie
+      disparait. Simulation numerique, unites normalisees et non metriques.
+    </p>
+  </header>
+
+  <div id="stage">
+    <div id="hud">
+      <div><b id="fps">—</b> <span>images/s</span></div>
+      <div><span>seuil</span> <b id="levelOut">—</b></div>
+    </div>
+  </div>
+
+  <footer>
+    <button id="spin" aria-pressed="false">Rotation</button>
+    <button id="play" aria-pressed="false">Balayage</button>
+    <label>seuil
+      <input id="level" type="range" min="0" max="1" value="0" step="1">
+      <span class="value" id="levelLabel">—</span>
+    </label>
+    <label>opacite
+      <input id="opacity" type="range" min="10" max="100" value="92" step="1">
+    </label>
+    <label><input id="showPlane" type="checkbox" checked> plan de coupe</label>
+    <span class="spacer">glisser pour tourner, molette pour zoomer</span>
+  </footer>
+</div>
+
+<script type="application/json" id="payload">/*__PAYLOAD__*/</script>
+
+<script type="importmap">
+{ "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const data = JSON.parse(document.getElementById('payload').textContent);
+const micro = data.microgravity;
+
+// ---------------------------------------------------------------------------
+// Scene, construite UNE fois. C'est tout l'interet : par la suite, une image
+// ne fait que deplacer une camera ou echanger un tampon deja en memoire GPU.
+// ---------------------------------------------------------------------------
+const stage = document.getElementById('stage');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(stage.clientWidth, stage.clientHeight);
+stage.appendChild(renderer.domElement);
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0b0d10);
+
+const camera = new THREE.PerspectiveCamera(42, stage.clientWidth / stage.clientHeight, 0.1, 500);
+const spanX = micro.xRange[1] - micro.xRange[0];
+const midX = (micro.xRange[0] + micro.xRange[1]) / 2;
+camera.position.set(midX, 9, 26);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.target.set(midX, 0, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.07;
+controls.update();
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+const key = new THREE.DirectionalLight(0xffffff, 1.5);
+key.position.set(1, 1.4, 1.2);
+scene.add(key);
+const rim = new THREE.DirectionalLight(0x88aaff, 0.5);
+rim.position.set(-1, -0.6, -1);
+scene.add(rim);
+
+// ---------------------------------------------------------------------------
+// Les 48 geometries de revolution sont construites une fois au chargement.
+// Changer de seuil revient ensuite a echanger un pointeur, pas a recalculer.
+// ---------------------------------------------------------------------------
+const SEGMENTS = 64;
+const geometries = micro.curves.map(curve => {
+  // LatheGeometry tourne autour de l'axe Y : on lui passe (rayon, position).
+  const profile = curve.map(([x, r]) => new THREE.Vector2(Math.max(r, 1e-4), x));
+  const geometry = new THREE.LatheGeometry(profile, SEGMENTS);
+  geometry.computeVertexNormals();
+  return geometry;
+});
+
+const material = new THREE.MeshStandardMaterial({
+  color: 0xf0a24a,
+  roughness: 0.42,
+  metalness: 0.08,
+  transparent: true,
+  opacity: 0.92,
+  side: THREE.DoubleSide
+});
+const plume = new THREE.Mesh(geometries[0], material);
+// L'axe du panache est x dans les donnees, Y dans LatheGeometry : on couche.
+plume.rotation.z = -Math.PI / 2;
+scene.add(plume);
+
+// ---------------------------------------------------------------------------
+// Le plan de coupe : une texture sur quatre sommets, au lieu des 14 400
+// sommets qu'il coutait en rendu plotly.
+// ---------------------------------------------------------------------------
+const loader = new THREE.TextureLoader();
+const texture = loader.load('data:image/png;base64,' + data.textures.microgravity);
+texture.colorSpace = THREE.SRGBColorSpace;
+
+const spanY = micro.yRange[1] - micro.yRange[0];
+const plane = new THREE.Mesh(
+  new THREE.PlaneGeometry(spanX, spanY),
+  new THREE.MeshBasicMaterial({ map: texture, side: THREE.DoubleSide })
+);
+plane.position.set(midX, 0, 0);
+scene.add(plane);
+
+const axis = new THREE.Line(
+  new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(micro.xRange[0], 0, 0),
+    new THREE.Vector3(micro.xRange[1], 0, 0)
+  ]),
+  new THREE.LineBasicMaterial({ color: 0x4d5a66 })
+);
+scene.add(axis);
+
+// ---------------------------------------------------------------------------
+// Commandes
+// ---------------------------------------------------------------------------
+const levelInput = document.getElementById('level');
+const levelLabel = document.getElementById('levelLabel');
+const levelOut = document.getElementById('levelOut');
+const fpsOut = document.getElementById('fps');
+const spinButton = document.getElementById('spin');
+const playButton = document.getElementById('play');
+
+levelInput.max = String(geometries.length - 1);
+
+let index = 0;
+let spinning = false;
+let sweeping = false;
+let sweepDirection = 1;
+
+function setLevel(next) {
+  index = Math.max(0, Math.min(geometries.length - 1, next));
+  plume.geometry = geometries[index];
+  levelInput.value = String(index);
+  const value = micro.levels[index].toFixed(2);
+  levelLabel.textContent = value;
+  levelOut.textContent = value;
+}
+setLevel(Math.floor(geometries.length * 0.75));
+
+levelInput.addEventListener('input', () => setLevel(Number(levelInput.value)));
+
+spinButton.addEventListener('click', () => {
+  spinning = !spinning;
+  spinButton.setAttribute('aria-pressed', String(spinning));
+});
+playButton.addEventListener('click', () => {
+  sweeping = !sweeping;
+  playButton.setAttribute('aria-pressed', String(sweeping));
+});
+
+document.getElementById('opacity').addEventListener('input', event => {
+  material.opacity = Number(event.target.value) / 100;
+});
+document.getElementById('showPlane').addEventListener('change', event => {
+  plane.visible = event.target.checked;
+});
+
+addEventListener('resize', () => {
+  camera.aspect = stage.clientWidth / stage.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+});
+
+// ---------------------------------------------------------------------------
+// Boucle de rendu. Rien n'est reconstruit : on deplace une camera, on echange
+// une geometrie deja televersee. C'est la difference avec plotly.
+// ---------------------------------------------------------------------------
+let frames = 0;
+let lastSample = performance.now();
+let sweepAccumulator = 0;
+
+function animate(now) {
+  requestAnimationFrame(animate);
+
+  if (spinning) {
+    const angle = 0.006;
+    const dx = camera.position.x - controls.target.x;
+    const dz = camera.position.z - controls.target.z;
+    camera.position.x = controls.target.x + dx * Math.cos(angle) - dz * Math.sin(angle);
+    camera.position.z = controls.target.z + dx * Math.sin(angle) + dz * Math.cos(angle);
+  }
+
+  if (sweeping) {
+    sweepAccumulator += 0.35;
+    if (sweepAccumulator >= 1) {
+      sweepAccumulator = 0;
+      let next = index + sweepDirection;
+      if (next >= geometries.length || next < 0) {
+        sweepDirection *= -1;
+        next = index + sweepDirection;
+      }
+      setLevel(next);
+    }
+  }
+
+  controls.update();
+  renderer.render(scene, camera);
+
+  frames++;
+  if (now - lastSample > 500) {
+    fpsOut.textContent = (frames * 1000 / (now - lastSample)).toFixed(0);
+    frames = 0;
+    lastSample = now;
+  }
+}
+requestAnimationFrame(animate);
+
+document.getElementById('title').textContent =
+  'PSI-115 — panache de fumee, microgravite, bruleur ' + data.burner + ' cm';
+</script>
+</body>
+</html>

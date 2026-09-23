@@ -49,10 +49,12 @@ from flame.dashboard.coverage import (  # noqa: E402
 )
 from flame.dashboard.predict import (  # noqa: E402
     build,
+    cross_validated_error,
     predicted_diameter,
     predicted_rate,
     probability,
     to_features,
+    value,
 )
 from flame.retrieval.search import ReportSearch  # noqa: E402
 from flame.dashboard.registry import (  # noqa: E402
@@ -75,6 +77,29 @@ BADGE = {
 OUTCOME_LABELS = {
     "suppression": ("Probabilite d'extinction", "la flamme s'eteint"),
     "sustainment": ("Probabilite d'auto-extinction", "la flamme meurt seule"),
+}
+
+SUGGESTIONS = {
+    "suppression": [
+        "why does carbon dioxide extinguish a droplet flame",
+        "what is the d-squared law for droplet burning",
+        "radiative extinction of large droplets",
+    ],
+    "sustainment": [
+        "difference between normal and inverse diffusion flames",
+        "what is the adiabatic flame temperature",
+        "spherical burner flame extinction in microgravity",
+    ],
+    "detection": [
+        "smoke detector response to different materials",
+        "particle size distribution of smoke in microgravity",
+        "thermal precipitator sampling of smoke particles",
+    ],
+    "soot": [
+        "what is the smoke point of a laminar diffusion flame",
+        "soot formation in coflow jet flames",
+        "effect of nozzle diameter on flame length",
+    ],
 }
 
 
@@ -128,7 +153,7 @@ def render_control(control, pool: pd.DataFrame, restricted: bool):
 st.title("Fotia")
 st.caption(
     "Donnees de combustion en microgravite de la NASA, rassemblees et rendues "
-    "comparables. 24 investigations, 10 exploitables, 2 modules branches."
+    "comparables. 24 investigations, 10 exploitables, 4 modules branches."
 )
 
 available = ready_modules()
@@ -226,9 +251,20 @@ with tab_predict:
             st.caption(f"azote de complement : {1 - total:.2f}")
 
     features = to_features(module, query)
-    chance = probability(data, features)
     proximity = data.index.assess(features)
-    title, meaning = OUTCOME_LABELS[choice]
+    regression = module.outcome_kind == "regression"
+
+    if regression:
+        chance = 0.0
+        prediction = value(data, features)
+        spread = cross_validated_error(data)
+        title = module.target_label
+        meaning = module.target_meaning
+        shown_value = f"{prediction:.2f} {module.target_unit}"
+    else:
+        chance = probability(data, features)
+        title, meaning = OUTCOME_LABELS[choice]
+        shown_value = f"{chance:.0%}"
 
     with results:
         left, right = st.columns([1, 1])
@@ -236,10 +272,15 @@ with tab_predict:
             st.markdown(f"**{title}**")
             opacity = "1" if proximity.trustworthy else ".35"
             st.markdown(
-                f"<div style='font-size:52px;font-weight:700;line-height:1;"
-                f"opacity:{opacity}'>{chance:.0%}</div>",
+                f"<div style='font-size:46px;font-weight:700;line-height:1;"
+                f"opacity:{opacity}'>{shown_value}</div>",
                 unsafe_allow_html=True,
             )
+            if regression:
+                st.caption(
+                    f"± {spread:.2f} {module.target_unit}, l'erreur moyenne du "
+                    "modele en validation croisee"
+                )
             st.caption(
                 meaning
                 if proximity.trustworthy
@@ -308,7 +349,7 @@ with tab_predict:
             "De vraies combustions en microgravite. Elles valent mieux que la "
             "prediction quand elles sont proches."
         )
-        shown = ["distance"] + module.features + [module.label]
+        shown = ["distance"] + module.features + [module.label or module.target]
         st.dataframe(
             proximity.neighbours[[c for c in shown if c in proximity.neighbours]],
             hide_index=True,
@@ -490,18 +531,6 @@ with tab_reports:
             "qu'elle peut citer**, et se tait quand elle ne trouve rien."
         )
 
-        SUGGESTIONS = {
-            "suppression": [
-                "why does carbon dioxide extinguish a droplet flame",
-                "what is the d-squared law for droplet burning",
-                "radiative extinction of large droplets",
-            ],
-            "sustainment": [
-                "difference between normal and inverse diffusion flames",
-                "what is the adiabatic flame temperature",
-                "spherical burner flame extinction in microgravity",
-            ],
-        }
         chips = st.columns(len(SUGGESTIONS[choice]))
         for column, suggestion in zip(chips, SUGGESTIONS[choice]):
             with column:

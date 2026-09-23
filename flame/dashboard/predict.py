@@ -30,6 +30,8 @@ from dataclasses import dataclass
 
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler
 
 from flame.dashboard.proximity import ProximityIndex
 from flame.dashboard.registry import Module
@@ -61,7 +63,16 @@ class Bundle:
 
 
 def _estimator(module: Module):
-    """Le modèle retenu pour ce module, tel que la mesure l'a désigné."""
+    """Le modèle retenu pour ce module, tel que la mesure l'a désigné.
+
+    Quatre jeux de donnees, quatre reponses : la foret gagne douze points sur
+    PSI-159, n'apporte rien sur PSI-101 ni sur PSI-107, et perd sur PSI-69.
+    Le choix se mesure jeu par jeu, il ne se decrete pas.
+    """
+    if module.outcome_kind == "regression":
+        from sklearn.linear_model import Ridge
+
+        return Pipeline([("scale", StandardScaler()), ("model", Ridge())])
     if module.key == "sustainment":
         return RandomForestClassifier(
             n_estimators=200, max_depth=6, class_weight="balanced", random_state=0
@@ -72,10 +83,13 @@ def _estimator(module: Module):
 def build(module: Module) -> Bundle:
     """Entraîne le module et prépare son index de proximité."""
     frame = module.loader()
-    frame = frame[frame[module.features].notna().all(axis=1)].reset_index(drop=True)
+    outcome = module.label or module.target
+    frame = frame[
+        frame[module.features].notna().all(axis=1) & frame[outcome].notna()
+    ].reset_index(drop=True)
 
     X = pd.get_dummies(frame[module.features], drop_first=True).astype(float)
-    y = frame[module.label].astype(int)
+    y = frame[outcome] if module.target else frame[outcome].astype(int)
 
     model = _estimator(module).fit(X, y)
     interpretable = None
@@ -153,8 +167,37 @@ def predicted_rate(bundle: Bundle, features: dict) -> float | None:
     return max(float(bundle.rate_model.predict(row)[0]), 1e-3)
 
 
+def _row(bundle: Bundle, features: dict) -> pd.DataFrame:
+    row = pd.get_dummies(pd.DataFrame([features])[bundle.module.features])
+    return row.reindex(columns=bundle.columns, fill_value=0).astype(float)
+
+
 def probability(bundle: Bundle, features: dict) -> float:
     """Probabilité de la classe 1, alignée sur les colonnes d'entraînement."""
-    row = pd.get_dummies(pd.DataFrame([features])[bundle.module.features])
-    row = row.reindex(columns=bundle.columns, fill_value=0).astype(float)
-    return float(bundle.model.predict_proba(row)[0, 1])
+    return float(bundle.model.predict_proba(_row(bundle, features))[0, 1])
+
+
+def value(bundle: Bundle, features: dict) -> float:
+    """Valeur prédite, pour un module a sortie continue."""
+    return float(bundle.model.predict(_row(bundle, features))[0])
+
+
+def cross_validated_error(bundle: Bundle) -> float:
+    """Erreur moyenne du module, a afficher a cote de toute prediction.
+
+    Une valeur continue sans son incertitude se lit comme une certitude.
+    """
+    from sklearn.model_selection import KFold, cross_val_score
+
+    module = bundle.module
+    outcome = module.target
+    frame = bundle.frame
+    X = pd.get_dummies(frame[module.features], drop_first=True).astype(float)
+    scores = cross_val_score(
+        _estimator(module),
+        X,
+        frame[outcome],
+        cv=KFold(5, shuffle=True, random_state=0),
+        scoring="neg_mean_absolute_error",
+    )
+    return float(-scores.mean())

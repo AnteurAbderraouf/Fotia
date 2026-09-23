@@ -123,17 +123,48 @@ NUMERIC = [
     "fuel_jet_velocity_cm_s",
 ]
 
-# Conditions réglées avant l'essai. Le point de fumée et la largeur de flamme
-# sont des mesures faites sur l'image de la flamme : ce sont les sorties.
+# --- Séparation entrées / sorties, corrigée le 2026-09-23 --------------------
+#
+# Une version antérieure plaçait les débits de carburant dans FEATURES, et le
+# modèle atteignait un R² de 0.984. C'était une FUITE DE DONNÉES, et les
+# en-têtes NASA le disaient en toutes lettres :
+#
+#     colonne 25   « S.P. Total Fuel Flow (SCCM) »
+#     colonne 28   « S.P. HC Mass Flow (mg/s) »
+#
+# « S.P. » signifie Smoke Point. Ces débits ne sont pas une consigne : ce sont
+# les débits AU MOMENT où la flamme commence à fumer. L'équipage montait le
+# débit jusqu'à voir apparaître la suie, et relevait alors le débit et la
+# longueur de flamme. Les deux mesurent le même instant.
+#
+# Le modèle prédisait donc le point de fumée à partir du point de fumée. La
+# corrélation entre le débit et la cible valait +0.975, et retirer les débits
+# fait tomber le R² de 0.984 à 0.540. C'est cette seconde valeur qui décrit ce
+# que le modèle sait vraiment faire.
+#
+# `fuel_jet_velocity_cm_s` est écarté pour la même raison : c'est le débit
+# divisé par la section de la buse.
+#
+# `coflow_velocity_cm_s` reste une entrée : le débit d'air est bien une
+# consigne, indépendante de l'instant où la suie apparaît.
+
 FEATURES = [
     "fuel",
     "fuel_fraction",
     "nozzle_mm",
     "coflow_velocity_cm_s",
-    "fuel_jet_velocity_cm_s",
-    "mdot_hc_mg_s",
 ]
-POST_BURN = ["smoke_point_mm", "smoke_point_pixels", "flame_width_mm"]
+POST_BURN = [
+    "smoke_point_mm",
+    "smoke_point_pixels",
+    "flame_width_mm",
+    # Mesures prises a l'instant du point de fumee, pas des consignes.
+    "mdot_hc_mg_s",
+    "mdot_total_mg_s",
+    "total_fuel_sccm",
+    "hc_only_sccm",
+    "fuel_jet_velocity_cm_s",
+]
 OUTCOME = "smoke_point_mm"
 
 

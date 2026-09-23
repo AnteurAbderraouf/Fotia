@@ -12,7 +12,7 @@ Insights from Microgravity Combustion Data.*
 
 NASA has flown combustion experiments on the ISS, the Space Shuttle and
 parabolic-flight aircraft for decades. The results are published, but they live
-in 25 separate investigations with no common format: different spreadsheet
+in two dozen separate investigations with no common format: different spreadsheet
 conventions per research team, outcomes buried in free text, headers that lost
 their subscripts to encoding, Excel formula errors frozen into cells as if they
 were measurements.
@@ -23,7 +23,7 @@ for the real work — it is half the deliverable.
 ## What is in here
 
 ```
-combustion_science/     25 NASA investigations, one folder each
+combustion_science/     24 NASA investigations, one folder each
   <PSI-xxx>/
     csv/                working copies of the usable tabular files
     info.md             NASA's own description, verbatim

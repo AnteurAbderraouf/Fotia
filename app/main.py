@@ -34,6 +34,13 @@ import streamlit.components.v1 as components
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from flame.dashboard.catalogue import (  # noqa: E402
+    VERDICT_LABELS,
+    read_info_text,
+    scan,
+    summary,
+    table,
+)
 from flame.dashboard.coverage import (  # noqa: E402
     coverage_figure,
     coverage_stats,
@@ -111,7 +118,7 @@ def render_control(control, pool: pd.DataFrame, restricted: bool):
 st.title("Fotia")
 st.caption(
     "Donnees de combustion en microgravite de la NASA, rassemblees et rendues "
-    "comparables. 25 investigations, 10 exploitables, 2 modules branches."
+    "comparables. 24 investigations, 10 exploitables, 2 modules branches."
 )
 
 available = ready_modules()
@@ -129,15 +136,17 @@ st.caption(f"**{module.question}**  ·  {module.regime}")
 if module.note:
     st.caption(module.note)
 
-tabs = ["Prediction", "Ou sont les essais", "Couverture des modules", "Methode"]
+tabs = ["Prediction", "Ou sont les essais", "Le catalogue", "Modules", "Methode"]
 if choice == "suppression":
     tabs.insert(0, "La flamme, en direct")
 rendered = st.tabs(tabs)
 if choice == "suppression":
-    tab_live, tab_predict, tab_coverage, tab_modules, tab_about = rendered
+    (tab_live, tab_predict, tab_coverage, tab_catalogue, tab_modules,
+     tab_about) = rendered
 else:
     tab_live = None
-    tab_predict, tab_coverage, tab_modules, tab_about = rendered
+    (tab_predict, tab_coverage, tab_catalogue, tab_modules,
+     tab_about) = rendered
 
 # ---------------------------------------------------------------------------
 # Onglet interactif : tout se calcule dans le navigateur, donc sans coupure.
@@ -354,6 +363,102 @@ with tab_coverage:
         "L'essai le plus proche de la position courante. Ses conditions sont, "
         "par construction, dans le domaine teste."
     )
+
+# ---------------------------------------------------------------------------
+# Le catalogue : la moitie du livrable, puisque le defi porte sur la
+# fragmentation des donnees et non sur un seul jeu.
+# ---------------------------------------------------------------------------
+with tab_catalogue:
+    stats = summary()
+    st.subheader("Les investigations NASA, rassemblees")
+    st.caption(
+        "Le defi porte sur la fragmentation : ces resultats sont publics mais "
+        "eparpilles dans des dizaines d'investigations sans format commun. "
+        "Savoir lesquelles ne menent nulle part est un resultat — c'est du temps "
+        "que la personne suivante n'aura pas a perdre."
+    )
+
+    counters = st.columns(5)
+    for column, (value, label) in zip(
+        counters,
+        [
+            (stats["total"], "investigations"),
+            (stats["exploitable"], "exploitees"),
+            (stats["partiel"], "partiellement"),
+            (stats["impasse"], "sans resultat par essai"),
+            (f"{stats['rows']:,}".replace(",", " "), "lignes exploitables"),
+        ],
+    ):
+        with column:
+            st.markdown(
+                f"<div style='font-size:30px;font-weight:700;line-height:1.1'>"
+                f"{value}</div>",
+                unsafe_allow_html=True,
+            )
+            st.caption(label)
+
+    st.markdown("---")
+    wanted = st.multiselect(
+        "Filtrer",
+        list(VERDICT_LABELS.values()),
+        default=list(VERDICT_LABELS.values()),
+        label_visibility="collapsed",
+    )
+    inventory = table()
+    st.dataframe(
+        inventory[inventory["verdict"].isin(wanted)],
+        hide_index=True,
+        use_container_width=True,
+        column_config={
+            "lignes exploitables": st.column_config.NumberColumn(format="%d"),
+            "notre evaluation": st.column_config.TextColumn(width="large"),
+        },
+    )
+    st.caption(
+        "Les colonnes **plateforme**, **periode** et **titre NASA** sont scannees "
+        "depuis les info.md, reproduits verbatim. La colonne **notre evaluation** "
+        "est notre travail, pas celui de NASA."
+    )
+
+    st.markdown("---")
+    st.markdown("**Lire une investigation**")
+    items = {i.psi: i for i in scan()}
+    picked = st.selectbox(
+        "Investigation",
+        list(items),
+        format_func=lambda k: f"{k} — {VERDICT_LABELS[items[k].verdict]}",
+        label_visibility="collapsed",
+    )
+    item = items[picked]
+    left, right = st.columns([1, 1], gap="large")
+    with left:
+        st.markdown("**Ce que NASA dit**")
+        for label, key in [
+            ("titre", "title"), ("plateforme", "platform"),
+            ("debut", "start"), ("fin", "end"),
+            ("financeur", "sponsor"), ("centre", "centre"),
+        ]:
+            if item.nasa.get(key):
+                st.caption(f"{label} : {item.nasa[key]}")
+        if item.objectives:
+            st.markdown(f"> {item.objectives}")
+        elif picked == "PSI-159":
+            st.warning(
+                "L'info.md de PSI-159 est un squelette vide, seul du catalogue. "
+                "Il attend que le texte NASA y soit colle verbatim."
+            )
+    with right:
+        st.markdown("**Ce qu'on a trouve**")
+        st.caption(item.assessment)
+        st.caption(
+            f"fichiers : {item.files['csv']} csv · {item.files['reports']} PDF"
+            + (f" · {item.files['fields']} grilles" if item.files["fields"] else "")
+        )
+        if item.rows:
+            st.caption(f"{item.rows} lignes exploitables produites")
+
+    with st.expander(f"Texte NASA integral — {picked}"):
+        st.markdown(read_info_text(picked) or "_aucun info.md_")
 
 # ---------------------------------------------------------------------------
 with tab_modules:

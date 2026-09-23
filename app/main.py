@@ -54,6 +54,7 @@ from flame.dashboard.predict import (  # noqa: E402
     probability,
     to_features,
 )
+from flame.retrieval.search import ReportSearch  # noqa: E402
 from flame.dashboard.registry import (  # noqa: E402
     MODULES,
     coverage_summary,
@@ -80,6 +81,15 @@ OUTCOME_LABELS = {
 @st.cache_resource
 def bundle_for(key: str):
     return build(MODULES[key])
+
+
+@st.cache_resource
+def report_search():
+    """L'index TF-IDF, construit une fois pour toutes les sessions."""
+    try:
+        return ReportSearch()
+    except FileNotFoundError:
+        return None
 
 
 def badge(verdict: str) -> None:
@@ -136,16 +146,17 @@ st.caption(f"**{module.question}**  ·  {module.regime}")
 if module.note:
     st.caption(module.note)
 
-tabs = ["Prediction", "Ou sont les essais", "Le catalogue", "Modules", "Methode"]
+tabs = ["Prediction", "Ou sont les essais", "Le catalogue", "Les rapports",
+        "Modules", "Methode"]
 if choice == "suppression":
     tabs.insert(0, "La flamme, en direct")
 rendered = st.tabs(tabs)
 if choice == "suppression":
-    (tab_live, tab_predict, tab_coverage, tab_catalogue, tab_modules,
-     tab_about) = rendered
+    (tab_live, tab_predict, tab_coverage, tab_catalogue, tab_reports,
+     tab_modules, tab_about) = rendered
 else:
     tab_live = None
-    (tab_predict, tab_coverage, tab_catalogue, tab_modules,
+    (tab_predict, tab_coverage, tab_catalogue, tab_reports, tab_modules,
      tab_about) = rendered
 
 # ---------------------------------------------------------------------------
@@ -459,6 +470,101 @@ with tab_catalogue:
 
     with st.expander(f"Texte NASA integral — {picked}"):
         st.markdown(read_info_text(picked) or "_aucun info.md_")
+
+# ---------------------------------------------------------------------------
+# Les rapports : repondre avec ses sources, ou se taire.
+# ---------------------------------------------------------------------------
+with tab_reports:
+    engine = report_search()
+    if engine is None:
+        st.warning(
+            "Le corpus n'est pas construit. Le produire avec "
+            "`py scripts/extract_pdf_text.py`."
+        )
+    else:
+        st.subheader("Chercher dans les rapports NASA")
+        st.caption(
+            f"{len(engine):,} passages extraits de "
+            f"{engine.corpus['document'].nunique()} rapports. Chaque resultat "
+            "porte son document et sa page : **la recherche ne repond que ce "
+            "qu'elle peut citer**, et se tait quand elle ne trouve rien."
+        )
+
+        SUGGESTIONS = {
+            "suppression": [
+                "why does carbon dioxide extinguish a droplet flame",
+                "what is the d-squared law for droplet burning",
+                "radiative extinction of large droplets",
+            ],
+            "sustainment": [
+                "difference between normal and inverse diffusion flames",
+                "what is the adiabatic flame temperature",
+                "spherical burner flame extinction in microgravity",
+            ],
+        }
+        chips = st.columns(len(SUGGESTIONS[choice]))
+        for column, suggestion in zip(chips, SUGGESTIONS[choice]):
+            with column:
+                if st.button(suggestion[:38] + "…", key=f"sug_{suggestion}",
+                             use_container_width=True):
+                    st.session_state["question"] = suggestion
+
+        question = st.text_input(
+            "Question",
+            key="question",
+            placeholder="en anglais — les rapports le sont",
+            label_visibility="collapsed",
+        )
+
+        narrow = st.selectbox(
+            "Limiter a une investigation",
+            ["toutes"] + sorted(engine.corpus["investigation"].unique()),
+        )
+
+        if question:
+            hits = engine.search(
+                question, limit=6,
+                investigation=None if narrow == "toutes" else narrow,
+            )
+            if not hits:
+                st.info(
+                    "Aucun passage assez proche. La question sort du corpus, ou "
+                    "son vocabulaire n'y figure pas — la recherche compare des "
+                    "mots, pas des idees."
+                )
+            for hit in hits:
+                with st.container(border=True):
+                    head, score = st.columns([4, 1])
+                    with head:
+                        st.markdown(f"**{hit.citation}**")
+                    with score:
+                        st.markdown(
+                            f"<div style='text-align:right;color:#898781'>"
+                            f"{hit.score:.3f}</div>",
+                            unsafe_allow_html=True,
+                        )
+                    st.caption("termes partages : " + ", ".join(hit.terms))
+                    st.markdown(f"> {hit.text}")
+
+        st.markdown("---")
+        with st.expander("Ce que le corpus contient — et ne contient pas"):
+            st.dataframe(engine.coverage(), hide_index=True,
+                         use_container_width=True)
+            st.caption(
+                "Onze investigations sur 24 ont des rapports ; les autres n'en "
+                "ont pas, et aucune recherche ne fera apparaitre ce qui n'a pas "
+                "ete publie. L'extraction perd par ailleurs la mise en page : "
+                "pour un chiffre, les tables de data/processed/ sont la source, "
+                "pas ce corpus."
+            )
+            st.caption(
+                "La recherche est un TF-IDF, pas un modele de langage. Elle "
+                "compare des mots et des paires de mots, ce qui la rend "
+                "**verifiable** — les termes qui ont porte chaque correspondance "
+                "sont affiches. Un modele generatif produirait des reponses "
+                "plausibles et invérifiables ; dans un outil de securite "
+                "incendie, c'est disqualifiant."
+            )
 
 # ---------------------------------------------------------------------------
 with tab_modules:

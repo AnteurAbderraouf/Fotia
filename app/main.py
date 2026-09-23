@@ -56,6 +56,8 @@ from flame.dashboard.predict import (  # noqa: E402
     to_features,
     value,
 )
+from flame.loaders.psi99 import load as psi99_load  # noqa: E402
+from flame.loaders.psi115 import load as psi115_load  # noqa: E402
 from flame.retrieval.search import ReportSearch  # noqa: E402
 from flame.dashboard.registry import (  # noqa: E402
     MODULES,
@@ -121,6 +123,17 @@ def bundle_for(key: str):
 
 
 @st.cache_resource
+def threejs_page():
+    """La page 3D du panache, si le maillage a ete extrait."""
+    from pathlib import Path
+
+    generated = Path("data/figures/psi115_threejs.html")
+    if generated.exists():
+        return generated.read_text(encoding="utf-8")
+    return None
+
+
+@st.cache_resource
 def report_search():
     """L'index TF-IDF, construit une fois pour toutes les sessions."""
     try:
@@ -183,18 +196,18 @@ st.caption(f"**{module.question}**  ·  {module.regime}")
 if module.note:
     st.caption(module.note)
 
-tabs = ["Prediction", "Ou sont les essais", "Le catalogue", "Les rapports",
-        "Modules", "Methode"]
+tabs = ["Prediction", "Ou sont les essais", "Microgravite vs Terre",
+        "Le catalogue", "Les rapports", "Modules", "Methode"]
 if choice == "suppression":
     tabs.insert(0, "La flamme, en direct")
 rendered = st.tabs(tabs)
 if choice == "suppression":
-    (tab_live, tab_predict, tab_coverage, tab_catalogue, tab_reports,
-     tab_modules, tab_about) = rendered
+    (tab_live, tab_predict, tab_coverage, tab_gravity, tab_catalogue,
+     tab_reports, tab_modules, tab_about) = rendered
 else:
     tab_live = None
-    (tab_predict, tab_coverage, tab_catalogue, tab_reports, tab_modules,
-     tab_about) = rendered
+    (tab_predict, tab_coverage, tab_gravity, tab_catalogue, tab_reports,
+     tab_modules, tab_about) = rendered
 
 # ---------------------------------------------------------------------------
 # Onglet interactif : tout se calcule dans le navigateur, donc sans coupure.
@@ -427,6 +440,101 @@ with tab_coverage:
         "L'essai le plus proche de la position courante. Ses conditions sont, "
         "par construction, dans le domaine teste."
     )
+
+# ---------------------------------------------------------------------------
+# Le contraste gravite / microgravite : la question de fond du domaine.
+# ---------------------------------------------------------------------------
+with tab_gravity:
+    st.subheader("Le feu dans l'espace n'est pas le feu sur Terre")
+    st.caption(
+        "Deux sources du catalogue repondent directement a cette question. "
+        "L'une est une mesure sur neuf echantillons, l'autre une simulation."
+    )
+
+    st.markdown("### Le meme materiau, en orbite et au sol")
+    st.caption(
+        "PSI-99 / Saffire-II. Neuf echantillons seulement, bien trop peu pour "
+        "entrainer quoi que ce soit — mais c'est la SEULE source du catalogue "
+        "qui porte les deux comportements sur la meme ligne."
+    )
+    saffire = psi99_load()
+    view = saffire[[
+        "sample_id", "material", "thickness_mm", "flow_direction",
+        "ug_burn_length_raw", "ug_spread_rate_raw",
+        "g1_burn_length_raw", "g1_spread_rate_raw",
+    ]].rename(columns={
+        "sample_id": "ech.", "material": "materiau", "thickness_mm": "ep. mm",
+        "flow_direction": "ecoulement",
+        "ug_burn_length_raw": "microgravite : longueur",
+        "ug_spread_rate_raw": "microgravite : vitesse",
+        "g1_burn_length_raw": "1 g : longueur",
+        "g1_spread_rate_raw": "1 g : vitesse",
+    })
+    st.dataframe(view, hide_index=True, use_container_width=True)
+
+    burned = int(saffire["burned_in_microgravity"].sum())
+    left, right = st.columns(2)
+    with left:
+        st.markdown("**Le silicone**")
+        st.markdown(
+            "<div style='font-size:34px;font-weight:700;line-height:1.1'>"
+            "0 / 4</div>", unsafe_allow_html=True)
+        st.caption(
+            "echantillons ayant brule en microgravite. A 1 g, deux d'entre eux "
+            "brulent COMPLETEMENT. Un materiau peut donc etre dangereux au sol "
+            "et inerte en orbite."
+        )
+    with right:
+        st.markdown("**Le tissu SIBAL**")
+        st.markdown(
+            "<div style='font-size:34px;font-weight:700;line-height:1.1'>"
+            "2,1 - 2,6 mm/s</div>", unsafe_allow_html=True)
+        st.caption(
+            "vitesse de propagation en microgravite, constante. A 1 g la colonne "
+            "porte « Acceleratory » : il n'y a pas de vitesse stable a donner. "
+            "La flottabilite emballe la flamme sur Terre ; en apesanteur elle "
+            "avance regulierement."
+        )
+    st.caption(
+        f"Au total, {burned} des {len(saffire)} echantillons ont brule en "
+        "microgravite. Ces neuf lignes ne se modelisent pas : elles se lisent."
+    )
+
+    st.markdown("---")
+    st.markdown("### Le panache de fumee, avec et sans gravite")
+    st.caption(
+        "PSI-115. Simulation numerique, pas une mesure. Le volume de gauche est "
+        "obtenu en faisant tourner la tranche calculee autour de son axe : le "
+        "cas en microgravite est axisymetrique (asymetrie mesuree 0.0002), donc "
+        "cette revolution reconstruit le volume que la simulation representait "
+        "deja. Le cas terrestre ne l'est pas (0.1133) : la gravite designe une "
+        "direction, le panache devie, et le revolutionner produirait une forme "
+        "sans realite physique."
+    )
+    fields = psi115_load()
+    compare = fields[
+        fields["variable"].isin(["smoke", "vort", "u", "numden"])
+        & fields["thermophoresis"]
+    ].pivot_table(index="variable_label", columns="gravity", values="max").round(2)
+    compare.columns = [f"maximum a {c}" for c in compare.columns]
+    st.dataframe(compare, use_container_width=True)
+    st.caption(
+        "La vorticite chute de 56.8 a 35.2 et la vitesse axiale de 3.4 a 2.4 : "
+        "c'est la flottabilite qui disparait. Mais la fraction de fumee MONTE, "
+        "de 9.4 a 12.9. Sans courant ascendant pour l'emporter, la fumee ne "
+        "part pas : elle stagne pres de la source. Unites normalisees, non "
+        "metriques."
+    )
+
+    with st.expander("Voir le panache en 3D"):
+        page = threejs_page()
+        if page:
+            components.html(page, height=620, scrolling=False)
+        else:
+            st.info(
+                "La page 3D n'est pas generee. La produire avec "
+                "`py -m flame.viz.threejs` (necessite mesh_axes.csv)."
+            )
 
 # ---------------------------------------------------------------------------
 # Le catalogue : la moitie du livrable, puisque le defi porte sur la

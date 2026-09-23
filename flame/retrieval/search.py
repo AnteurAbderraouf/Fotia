@@ -19,18 +19,38 @@ mécanisme est simple et il doit le rester.
 La règle tient en une phrase : **il ne répond que ce qu'il peut citer.** S'il
 ne trouve rien, il le dit.
 
-POURQUOI TF-IDF PLUTÔT QUE DES EMBEDDINGS, POUR COMMENCER.
+DEUX MÉCANISMES, CHACUN POUR CE QU'IL SAIT FAIRE.
 
-Un modèle d'embeddings capterait mieux les reformulations — « éteindre » et
-« extinction » seraient rapprochés sans partager un mot. C'est un vrai
-avantage, et c'est la suite logique.
+TF-IDF compare des mots. Il est donc aveugle aux reformulations : interrogé
+sur « putting out a fire with carbon dioxide », il ne retrouve pas ce qu'il
+trouve pour « extinguish CO2 suppressant ». Mesuré sur huit questions
+paraphrasées, il ne ramène la bonne investigation que 3 fois sur 8.
 
-Mais TF-IDF a une propriété que les embeddings n'ont pas : **on peut voir
-pourquoi un passage a été retenu.** Chaque résultat affiche les termes qui ont
-porté la correspondance. Sur un corpus technique où le vocabulaire est stable
-— « extinction », « flame », « microgravity » reviennent tels quels — cette
-lisibilité vaut plus que la souplesse, et elle permet de juger la recherche
-au lieu de lui faire confiance.
+Une réduction de dimension (LSA, 200 composantes sur la matrice TF-IDF)
+rapproche les mots qui apparaissent dans les mêmes contextes. Sur les mêmes
+huit questions, elle passe à 6 sur 8. Elle capte donc ce que la comparaison de
+mots rate.
+
+MAIS ELLE PERD LE DROIT DE SE TAIRE, et seule, c'est rédhibitoire :
+
+    dans le domaine          hors du domaine
+    0.581  CO2 extinction    0.840  « quelle est la capitale de l'Australie »
+    0.643  suie              0.743  « best pizza in Naples »
+    0.645  detecteur fumee   0.671  « stock market prices today »
+
+LSA projette n'importe quelle question dans son espace et y trouve toujours un
+voisin. Une question sans rapport obtient un score SUPÉRIEUR à une question
+pertinente. Pour un outil dont la promesse tient en « il ne répond que ce
+qu'il peut citer », c'est disqualifiant.
+
+D'OÙ LE MONTAGE RETENU. TF-IDF tient la PORTE : la question doit partager un
+vocabulaire substantiel avec le corpus, sinon on ne répond pas. LSA fait le
+CLASSEMENT parmi ce qui a passé la porte. On garde la capacité de refus du
+premier et la souplesse du second.
+
+Les termes partagés restent affichés quand il y en a. Sur une reformulation
+pure la liste peut être courte : c'est alors LSA qui a porté le résultat, et
+le voir est une information.
 
 Les bigrammes sont inclus, faute de quoi « cool flame » se réduirait à deux
 mots indépendants dont le second est partout.
@@ -48,7 +68,9 @@ from dataclasses import dataclass
 
 import numpy as np
 import pandas as pd
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.preprocessing import normalize
 
 from flame.common.paths import PROCESSED
 
@@ -62,6 +84,12 @@ MIN_SCORE = 0.08
 # filtre de mots vides anglais ne retire pas : le score etait honorable, la
 # correspondance nulle. On exige donc au moins un terme substantiel partage.
 MIN_TERM_LENGTH = 4
+# Nombre de termes substantiels qu'une question doit partager avec le corpus
+# pour qu'on accepte d'y repondre. Un seul est une coincidence.
+MIN_SHARED_TERMS = 2
+# Dimensions de la reduction. 200 suffisent : au-dela, le gain sur les
+# paraphrases plafonne et le bruit augmente.
+LSA_COMPONENTS = 200
 
 
 @dataclass
@@ -107,6 +135,10 @@ class ReportSearch:
         self.matrix = self.vectorizer.fit_transform(self.corpus["text"])
         self.terms = np.array(self.vectorizer.get_feature_names_out())
 
+        # LSA sert au classement, jamais a decider s'il faut repondre.
+        self.svd = TruncatedSVD(n_components=LSA_COMPONENTS, random_state=0)
+        self.reduced = normalize(self.svd.fit_transform(self.matrix))
+
     def __len__(self) -> int:
         return len(self.corpus)
 
@@ -114,18 +146,72 @@ class ReportSearch:
     def vocabulary(self) -> int:
         return len(self.terms)
 
+    def _passes_gate(self, query) -> bool:
+        """La question partage-t-elle un vocabulaire substantiel avec le corpus ?
+
+        C'est la porte, et c'est TF-IDF qui la tient. Sans elle, LSA répondrait
+        à « quelle est la capitale de l'Australie » avec un score de 0.84,
+        supérieur à celui d'une vraie question du domaine.
+
+        DEUX CRITÈRES ONT ÉTÉ ESSAYÉS ET ÉCARTÉS AVANT CELUI-CI, parce qu'ils
+        ne séparaient rien :
+
+            le score TF-IDF maximal      « best pizza in Naples » obtient 0.150,
+                                         plus que « the alarm did not notice the
+                                         fumes » qui vaut 0.081 et qui est
+                                         pertinent.
+
+            la rarete des termes (IDF)   « stock market prices today » atteint
+                                         7.94, le maximum du corpus, autant
+                                         qu'une vraie question.
+
+        Ce qui sépare, c'est le NOMBRE de termes substantiels appariés. Un mot
+        isolé est une coïncidence : sur 3 000 passages anglais, presque tout
+        mot courant apparaît quelque part. Deux mots commencent à décrire un
+        sujet.
+
+        Mesuré sur quinze questions : le seuil de deux garde 8 questions du
+        domaine sur 8 et rejette 6 hors-sujet sur 7.
+
+        LA LIMITE RESTE RÉELLE. « stock market prices today » passe encore, ses
+        deux mots existant dans le corpus. Aucune statistique lexicale ne
+        distingue parfaitement le hors-sujet, et c'est pourquoi les termes
+        partagés sont affichés à côté de chaque résultat : quand la liste se
+        réduit à « market, today », le lecteur voit immédiatement ce qu'il en
+        est. La transparence complète le filtre, elle ne le remplace pas.
+        """
+        if query.nnz == 0:
+            return False
+        substantial = [
+            term
+            for term in self.terms[query.indices]
+            if len(term) >= MIN_TERM_LENGTH and " " not in term
+        ]
+        return len(substantial) >= MIN_SHARED_TERMS
+
     def search(
         self,
         question: str,
         limit: int = 5,
         investigation: str | None = None,
+        semantic: bool = True,
     ) -> list[Hit]:
-        """Les passages les plus proches, du plus au moins pertinent."""
+        """Les passages les plus proches, du plus au moins pertinent.
+
+        semantic : True classe avec LSA, qui capte les reformulations. False
+            reste sur TF-IDF pur, ce qui permet de comparer les deux.
+        """
         query = self.vectorizer.transform([question])
-        if query.nnz == 0:
+        if not self._passes_gate(query):
             return []
 
-        scores = (self.matrix @ query.T).toarray().ravel()
+        if semantic:
+            projected = self.svd.transform(query)
+            if not np.any(projected):
+                return []
+            scores = (self.reduced @ normalize(projected).T).ravel()
+        else:
+            scores = (self.matrix @ query.T).toarray().ravel()
 
         if investigation:
             mask = self.corpus["investigation"].to_numpy() == investigation
@@ -134,17 +220,20 @@ class ReportSearch:
         order = np.argsort(scores)[::-1][:limit]
         query_terms = set(self.terms[query.indices])
 
+        # Les deux espaces n'ont pas la meme echelle : une similarite cosinus
+        # apres reduction est structurellement plus elevee qu'un produit
+        # TF-IDF creux.
+        floor = MIN_SCORE * 3 if semantic else MIN_SCORE
         hits = []
         for index in order:
-            if scores[index] < MIN_SCORE:
+            if scores[index] < floor:
                 continue
             row = self.corpus.iloc[index]
-            # Les termes reellement partages : c'est ce qui rend la
-            # correspondance verifiable plutot que magique.
+            # Les termes reellement partages. Sur une reformulation pure la
+            # liste peut etre vide : c'est alors LSA qui a porte le resultat,
+            # et le voir est une information.
             passage_terms = set(self.terms[self.matrix[index].indices])
             shared = sorted(query_terms & passage_terms, key=len, reverse=True)
-            if not any(len(term) >= MIN_TERM_LENGTH for term in shared):
-                continue
             hits.append(
                 Hit(
                     investigation=row["investigation"],

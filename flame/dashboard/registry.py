@@ -110,6 +110,12 @@ def _psi142():
     return load()
 
 
+def _psi25():
+    from flame.loaders.psi25 import load
+
+    return load()
+
+
 MODULES: dict[str, Module] = {
     "suppression": Module(
         key="suppression",
@@ -278,9 +284,14 @@ MODULES: dict[str, Module] = {
         question="Comment ce materiau de vaisseau se comporte-t-il ?",
         regime="materiau solide, microgravite",
         investigation="PSI-25",
+        loader=_psi25,
         outcome_kind="descriptive",
-        ready=False,
-        note="AUCUNE etiquette entrainable : 20 issues explicites sur 129. Catalogue seul.",
+        ready=True,
+        note=(
+            "AUCUNE etiquette entrainable, et c'est un constat pas un renoncement : "
+            "20 issues explicites sur 129, et l'oxygene consomme donne des valeurs "
+            "physiquement impossibles. Ce module decrit, il ne predit pas."
+        ),
     ),
     "ground": Module(
         key="ground",

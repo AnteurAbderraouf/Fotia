@@ -109,6 +109,11 @@ SUGGESTIONS = {
         "cool flame extinction diameter versus pressure",
         "low temperature chemistry of dodecane droplets",
     ],
+    "materials": [
+        "PMMA flame spread in microgravity",
+        "SIBAL cotton fiberglass fabric burning",
+        "BASS experiment concurrent and opposed flow",
+    ],
     "ground": [
         "counterflow burner extinction strain rate",
         "ozone sensitized cool flames",
@@ -178,10 +183,13 @@ def render_control(control, pool: pd.DataFrame, restricted: bool):
 st.title("Fotia")
 st.caption(
     "Donnees de combustion en microgravite de la NASA, rassemblees et rendues "
-    "comparables. 24 investigations, 10 exploitables, 6 modules branches."
+    "comparables. 24 investigations, 10 exploitables, 7 modules branches."
 )
 
 available = ready_modules()
+DESCRIPTIVE = {
+    key for key, item in available.items() if item.outcome_kind == "descriptive"
+}
 choice = st.radio(
     "Regime",
     list(available),
@@ -196,7 +204,8 @@ st.caption(f"**{module.question}**  ·  {module.regime}")
 if module.note:
     st.caption(module.note)
 
-tabs = ["Prediction", "Ou sont les essais", "Microgravite vs Terre",
+first = "Le catalogue des essais" if choice in DESCRIPTIVE else "Prediction"
+tabs = [first, "Ou sont les essais", "Microgravite vs Terre",
         "Le catalogue", "Les rapports", "Modules", "Methode"]
 if choice == "suppression":
     tabs.insert(0, "La flamme, en direct")
@@ -230,7 +239,104 @@ if tab_live is not None:
         )
 
 # ---------------------------------------------------------------------------
-with tab_predict:
+if choice in DESCRIPTIVE:
+    with tab_predict:
+        st.subheader("129 combustions reelles a bord de l'ISS")
+        st.warning(
+            "**Ce module ne predit rien, et c'est un constat mesure, pas un "
+            "renoncement.** Deux pistes d'etiquette ont ete examinees. "
+            "L'issue en texte libre n'est ecrite que dans 20 essais sur 129 ; "
+            "les 109 autres portent une rampe de debit sans conclusion, et "
+            "deduire une extinction d'une liste de nombres serait une "
+            "invention. L'oxygene consomme donne quant a lui des valeurs "
+            "physiquement impossibles : l'O2 final monte jusqu'a 40.4 %, la "
+            "chambre ayant ete repurgee entre les deux releves sur une partie "
+            "des essais."
+        )
+        st.caption(
+            "Ce qui reste est precieux : un catalogue de materiaux reellement "
+            "embarques, brules en microgravite, avec leur geometrie demelee de "
+            "51 orthographes differentes."
+        )
+
+        catalogue = data.frame
+        picks = st.columns(3)
+        with picks[0]:
+            families = st.multiselect(
+                "Famille", sorted(catalogue["material_family"].dropna().unique()),
+                default=sorted(catalogue["material_family"].dropna().unique()),
+            )
+        with picks[1]:
+            forms = st.multiselect(
+                "Forme", sorted(catalogue["material_form"].dropna().unique()),
+                default=sorted(catalogue["material_form"].dropna().unique()),
+            )
+        with picks[2]:
+            only_stated = st.toggle(
+                "Seulement les issues declarees", value=False,
+                help="Les 20 essais ou NASA a ecrit ce qui s'est passe.",
+            )
+
+        filtered = catalogue[
+            catalogue["material_family"].isin(families)
+            & catalogue["material_form"].isin(forms)
+        ]
+        if only_stated:
+            filtered = filtered[filtered["outcome"].notna()]
+
+        counters = st.columns(4)
+        for column, (number, label) in zip(counters, [
+            (len(filtered), "essais"),
+            (int(filtered["outcome"].notna().sum()), "issues declarees"),
+            (filtered["material_family"].nunique(), "familles"),
+            (int(filtered["principal_investigator"].nunique()), "investigateurs"),
+        ]):
+            with column:
+                st.markdown(
+                    f"<div style='font-size:28px;font-weight:700;line-height:1.1'>"
+                    f"{number}</div>", unsafe_allow_html=True)
+                st.caption(label)
+
+        st.dataframe(
+            filtered[[
+                "test_id", "principal_investigator", "material_family",
+                "material_form", "thickness_mm", "width_cm", "diameter_mm",
+                "exposed_faces", "o2_initial_pct", "outcome", "material_raw",
+            ]].rename(columns={
+                "test_id": "essai", "principal_investigator": "investigateur",
+                "material_family": "famille", "material_form": "forme",
+                "thickness_mm": "ep. mm", "width_cm": "larg. cm",
+                "diameter_mm": "diam. mm", "exposed_faces": "faces",
+                "o2_initial_pct": "O2 %", "outcome": "issue",
+                "material_raw": "texte NASA d'origine",
+            }),
+            hide_index=True, use_container_width=True, height=420,
+        )
+        st.caption(
+            "La colonne « texte NASA d'origine » montre ce qu'il a fallu "
+            "demeler : le meme echantillon y est ecrit « 2 cm 100 micron thick "
+            "PMMA », « 100 micron PMMA film 2 cm wide » et « 100 micron film "
+            "2 cm wide »."
+        )
+
+        st.markdown("---")
+        st.markdown("**Qualite des mesures de gaz**")
+        flags = st.columns(3)
+        for column, (count, label, why) in zip(flags, [
+            (int(catalogue["o2_gained"].sum()), "O2 final > O2 initial",
+             "physiquement impossible en chambre close"),
+            (int(catalogue["co_negative"].sum()), "CO negatif",
+             "decalage de capteur"),
+            (int(catalogue["flow_ramp_ambiguous"].sum()), "rampe ambigue",
+             "valeurs d'un autre instrument melees"),
+        ]):
+            with column:
+                st.markdown(
+                    f"<div style='font-size:26px;font-weight:700;line-height:1.1'>"
+                    f"{count}</div>", unsafe_allow_html=True)
+                st.caption(f"{label} — {why}")
+else:
+  with tab_predict:
     controls, results = st.columns([1, 2], gap="large")
 
     with controls:

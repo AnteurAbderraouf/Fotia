@@ -67,6 +67,7 @@ from flame.dashboard.registry import (  # noqa: E402
 from flame.models.droplet_burn import burn_duration  # noqa: E402
 from flame.viz.droplet_anim import page as droplet_page  # noqa: E402
 from flame.viz.cool_flame_live import page as cool_flame_page  # noqa: E402
+from flame.viz.jet_flame_live import page as jet_flame_page  # noqa: E402
 from flame.viz.saffire_live import page as saffire_page  # noqa: E402
 from flame.viz.droplet_live import page as live_page  # noqa: E402
 
@@ -209,10 +210,10 @@ if module.note:
 first = "Le catalogue des essais" if choice in DESCRIPTIVE else "Prediction"
 tabs = [first, "Ou sont les essais", "Microgravite vs Terre",
         "Le catalogue", "Les rapports", "Modules", "Methode"]
-if choice in {"suppression", "cool_flames"}:
+if choice in {"suppression", "cool_flames", "soot"}:
     tabs.insert(0, "La flamme, en direct")
 rendered = st.tabs(tabs)
-if choice in {"suppression", "cool_flames"}:
+if choice in {"suppression", "cool_flames", "soot"}:
     (tab_live, tab_predict, tab_coverage, tab_gravity, tab_catalogue,
      tab_reports, tab_modules, tab_about) = rendered
 else:
@@ -223,7 +224,27 @@ else:
 # ---------------------------------------------------------------------------
 # Onglet interactif : tout se calcule dans le navigateur, donc sans coupure.
 # ---------------------------------------------------------------------------
-if tab_live is not None and choice == "cool_flames":
+if tab_live is not None and choice == "soot":
+    with tab_live:
+        st.caption(
+            "Trois dimensions sont MESUREES par essai : le diametre de buse, "
+            "la largeur maximale et la longueur au point de fumee."
+        )
+        components.html(jet_flame_page(), height=560, scrolling=False)
+        st.caption(
+            ":orange[**Le profil, lui, n'est pas mesure.**] Aucune colonne ne "
+            "dit ou la flamme atteint sa largeur maximale le long de son axe. "
+            "La silhouette affichee est celle, connue, d'une flamme de "
+            "diffusion laminaire : une convention de dessin, pas un releve. Ce "
+            "qui se compare valablement ici, ce sont les TAILLES."
+        )
+        st.caption(
+            "Cocher « comparer les carburants » : le propylene lache a 27 mm "
+            "en moyenne contre 71 pour le propane. Une flamme courte signifie "
+            "un carburant qui fume beaucoup, et c'est ce qu'on attend d'un "
+            "alcene face a un alcane."
+        )
+elif tab_live is not None and choice == "cool_flames":
     with tab_live:
         st.caption(
             "Trois diametres MESURES, donc trois coquilles emboitees exactes : "

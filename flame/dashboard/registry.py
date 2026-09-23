@@ -66,6 +66,12 @@ class Module:
     controls: list[Control] = field(default_factory=list)
     rare_label: int = 0
     unit_conversions: dict = field(default_factory=dict)
+    # Pour une sortie continue : ce qu'on predit, son unite, et le sens d'une
+    # valeur elevee. Une regression sans unite ni sens ne se lit pas.
+    target: str | None = None
+    target_label: str = ""
+    target_unit: str = ""
+    target_meaning: str = ""
 
 
 def _psi69():
@@ -82,6 +88,18 @@ def _psi39():
 
 def _psi159():
     from flame.loaders.psi159 import load
+
+    return load()
+
+
+def _psi107():
+    from flame.loaders.psi107 import load
+
+    return load()
+
+
+def _psi101():
+    from flame.loaders.psi101 import load
 
     return load()
 
@@ -178,9 +196,34 @@ MODULES: dict[str, Module] = {
         question="Que voient reellement les detecteurs de fumee de l'ISS ?",
         regime="materiau solide chauffe, microgravite",
         investigation="PSI-101",
+        loader=_psi101,
+        features=[
+            "material",
+            "inlet_velocity_cm_s",
+            "duration_s",
+            "primary_aging_s",
+            "primary_mixing_s",
+            "net_aging_s",
+        ],
+        target="iss_scatter_volts",
+        target_label="Signal de diffusion ISS",
+        target_unit="V",
+        target_meaning="eleve = le detecteur voit la fumee",
         outcome_kind="regression",
-        ready=False,
-        note="Regression sur la reponse en volts. Aucune colonne n'enregistre une alarme.",
+        ready=True,
+        note=(
+            "Aucune colonne n'enregistre une alarme : le module repond « combien "
+            "de volts », jamais « ca sonne ». Le canal d'obscurcissement n'est pas "
+            "modelise, 81 % de ses lectures valent zero."
+        ),
+        controls=[
+            Control("material", "Materiau"),
+            Control("inlet_velocity_cm_s", "Vitesse d'entree", "cm/s"),
+            Control("duration_s", "Duree de chauffe", "s"),
+            Control("primary_aging_s", "Vieillissement primaire", "s"),
+            Control("primary_mixing_s", "Melange primaire", "s"),
+            Control("net_aging_s", "Vieillissement net", "s"),
+        ],
     ),
     "soot": Module(
         key="soot",
@@ -188,9 +231,25 @@ MODULES: dict[str, Module] = {
         question="Quelle quantite de fumee ce carburant produit-il ?",
         regime="flamme de diffusion sur injecteur, microgravite",
         investigation="PSI-107",
+        loader=_psi107,
+        features=["fuel", "fuel_fraction", "nozzle_mm", "coflow_velocity_cm_s"],
+        target="smoke_point_mm",
+        target_label="Point de fumee",
+        target_unit="mm",
+        target_meaning="court = le carburant fume beaucoup",
         outcome_kind="regression",
-        ready=False,
-        note="Point de fumee. Trois plateformes distinctes, a ne pas melanger.",
+        ready=True,
+        note=(
+            "Une fuite de donnees a ete trouvee ici : les debits NASA sont "
+            "mesures A L'INSTANT du point de fumee, pas regles avant. Les "
+            "retirer fait tomber le R2 de 0.98 a 0.54."
+        ),
+        controls=[
+            Control("fuel", "Carburant"),
+            Control("fuel_fraction", "Fraction de carburant", "1 = pur"),
+            Control("nozzle_mm", "Diametre de buse", "mm"),
+            Control("coflow_velocity_cm_s", "Vitesse du co-courant d'air", "cm/s"),
+        ],
     ),
     "materials": Module(
         key="materials",

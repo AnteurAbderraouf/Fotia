@@ -66,6 +66,7 @@ from flame.dashboard.registry import (  # noqa: E402
 )
 from flame.models.droplet_burn import burn_duration  # noqa: E402
 from flame.viz.droplet_anim import page as droplet_page  # noqa: E402
+from flame.viz.cool_flame_live import page as cool_flame_page  # noqa: E402
 from flame.viz.droplet_live import page as live_page  # noqa: E402
 
 st.set_page_config(page_title="Fotia — combustion en microgravite", layout="wide")
@@ -207,10 +208,10 @@ if module.note:
 first = "Le catalogue des essais" if choice in DESCRIPTIVE else "Prediction"
 tabs = [first, "Ou sont les essais", "Microgravite vs Terre",
         "Le catalogue", "Les rapports", "Modules", "Methode"]
-if choice == "suppression":
+if choice in {"suppression", "cool_flames"}:
     tabs.insert(0, "La flamme, en direct")
 rendered = st.tabs(tabs)
-if choice == "suppression":
+if choice in {"suppression", "cool_flames"}:
     (tab_live, tab_predict, tab_coverage, tab_gravity, tab_catalogue,
      tab_reports, tab_modules, tab_about) = rendered
 else:
@@ -221,7 +222,26 @@ else:
 # ---------------------------------------------------------------------------
 # Onglet interactif : tout se calcule dans le navigateur, donc sans coupure.
 # ---------------------------------------------------------------------------
-if tab_live is not None:
+if tab_live is not None and choice == "cool_flames":
+    with tab_live:
+        st.caption(
+            "Trois diametres MESURES, donc trois coquilles emboitees exactes : "
+            "la gouttelette au depart, l'extinction de la flamme chaude, celle "
+            "de la flamme froide. Entre les deux dernieres il ne se passe rien "
+            "de visible a l'oeil, et pourtant la goutte continue de bruler."
+        )
+        components.html(cool_flame_page(), height=560, scrolling=False)
+        st.caption(
+            "**L'animation n'est proposee que sur le dodecane pur**, seul "
+            "carburant ou la loi en d² a ete verifiee (correlation +0.889). Sur "
+            "les melanges dodecane/iso-dodecane elle tombe a +0.03 et +0.50 : "
+            "les constituants s'evaporent a des rythmes differents, et sept des "
+            "huit gouttelettes dont le diametre d'extinction DEPASSE le diametre "
+            "initial sont des melanges — elles ont gonfle avant de bruler. Les "
+            "coquilles restent exactes ; seule la trajectoire entre elles serait "
+            "inventee."
+        )
+elif tab_live is not None:
     with tab_live:
         st.caption(
             "Les curseurs sont **dans la vue**. Streamlit relance tout le script a "

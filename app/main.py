@@ -771,15 +771,31 @@ with tab_reports:
             label_visibility="collapsed",
         )
 
-        narrow = st.selectbox(
-            "Limiter a une investigation",
-            ["toutes"] + sorted(engine.corpus["investigation"].unique()),
-        )
+        picker = st.columns([2, 2])
+        with picker[0]:
+            narrow = st.selectbox(
+                "Limiter a une investigation",
+                ["toutes"] + sorted(engine.corpus["investigation"].unique()),
+            )
+        with picker[1]:
+            mode = st.radio(
+                "Mecanisme",
+                ["Hybride (recommande)", "TF-IDF seul"],
+                horizontal=True,
+                help=(
+                    "Hybride : TF-IDF decide s'il faut repondre, une reduction "
+                    "de dimension classe les resultats. Sur huit questions "
+                    "paraphrasees, l'hybride trouve la bonne investigation "
+                    "6 fois contre 3 pour TF-IDF seul."
+                ),
+            )
+        semantic = mode.startswith("Hybride")
 
         if question:
             hits = engine.search(
                 question, limit=6,
                 investigation=None if narrow == "toutes" else narrow,
+                semantic=semantic,
             )
             if not hits:
                 st.info(
@@ -798,7 +814,13 @@ with tab_reports:
                             f"{hit.score:.3f}</div>",
                             unsafe_allow_html=True,
                         )
-                    st.caption("termes partages : " + ", ".join(hit.terms))
+                    if hit.terms:
+                        st.caption("termes partages : " + ", ".join(hit.terms))
+                    else:
+                        st.caption(
+                            ":orange[aucun terme commun] — ce resultat vient du "
+                            "rapprochement semantique, pas d'un mot partage"
+                        )
                     st.markdown(f"> {hit.text}")
 
         st.markdown("---")
@@ -812,13 +834,35 @@ with tab_reports:
                 "pour un chiffre, les tables de data/processed/ sont la source, "
                 "pas ce corpus."
             )
+            st.markdown("**Deux mecanismes montes en serie**")
             st.caption(
-                "La recherche est un TF-IDF, pas un modele de langage. Elle "
-                "compare des mots et des paires de mots, ce qui la rend "
-                "**verifiable** — les termes qui ont porte chaque correspondance "
-                "sont affiches. Un modele generatif produirait des reponses "
-                "plausibles et invérifiables ; dans un outil de securite "
-                "incendie, c'est disqualifiant."
+                "TF-IDF compare des mots : il est aveugle aux reformulations et "
+                "ne trouve la bonne investigation que 3 fois sur 8 questions "
+                "paraphrasees. Une reduction de dimension y arrive 6 fois, mais "
+                "elle PERD le droit de se taire : seule, elle donnait 0.84 a "
+                "« quelle est la capitale de l'Australie », plus qu'a la plupart "
+                "des vraies questions."
+            )
+            st.caption(
+                "D'ou le montage : TF-IDF tient la porte, la reduction fait le "
+                "classement. Une question doit partager au moins deux termes "
+                "substantiels avec le corpus pour qu'on y reponde. Ce seuil "
+                "garde 8 questions du domaine sur 8 et rejette 6 hors-sujet "
+                "sur 7."
+            )
+            st.caption(
+                "**La limite reste reelle.** « stock market prices today » passe "
+                "encore, ses deux mots existant dans le corpus. Aucune "
+                "statistique lexicale ne distingue parfaitement le hors-sujet : "
+                "c'est pourquoi les termes partages sont affiches a cote de "
+                "chaque resultat. La transparence complete le filtre, elle ne "
+                "le remplace pas."
+            )
+            st.caption(
+                "Ce n'est dans aucun cas un modele de langage. Un modele "
+                "generatif produirait des reponses plausibles et invérifiables ; "
+                "dans un outil de securite incendie, c'est disqualifiant. "
+                "`py scripts/benchmark_search.py` rejoue la comparaison."
             )
 
 # ---------------------------------------------------------------------------

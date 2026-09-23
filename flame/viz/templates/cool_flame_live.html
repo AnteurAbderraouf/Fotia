@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --bg:#0d0d0d; --panel:#14181d; --line:#2a3138; --text:#e8ecef;
+          --muted:#898781; --start:#3987e5; --hot:#d95926; --cool:#9085e9; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+               font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+               overflow:hidden; }
+  #app { display:grid; grid-template-columns:250px 1fr; height:100%; }
+  #panel { background:var(--panel); border-right:1px solid var(--line);
+           padding:12px 14px; overflow-y:auto; }
+  #panel h3 { margin:0 0 9px; font-size:12px; text-transform:uppercase;
+              letter-spacing:.06em; color:var(--muted); font-weight:600; }
+  .ctl { margin-bottom:10px; }
+  .ctl label { display:flex; justify-content:space-between; font-size:12px;
+               color:var(--muted); margin-bottom:3px; }
+  .ctl label b { color:var(--text); font-variant-numeric:tabular-nums; }
+  select, input[type=range] { width:100%; }
+  select { font:inherit; padding:4px 6px; background:#222930; color:var(--text);
+           border:1px solid #3a434c; border-radius:4px; }
+  input[type=range] { accent-color:var(--hot); margin:0; }
+  .note { color:var(--muted); font-size:11px; margin-top:9px; line-height:1.45; }
+  .warn { color:#fab219; }
+  .legend { margin-top:11px; font-size:11.5px; }
+  .legend div { display:flex; align-items:center; gap:7px; margin-bottom:4px; }
+  .dot { width:10px; height:10px; border-radius:50%; flex:none; }
+
+  #stage { position:relative; min-width:0; }
+  canvas { display:block; }
+  #cards { position:absolute; top:12px; left:12px; display:flex; gap:8px; }
+  .card { background:rgba(12,15,18,.86); border:1px solid var(--line);
+          border-radius:6px; padding:6px 10px; min-width:84px; }
+  .card .k { color:var(--muted); font-size:10px; text-transform:uppercase;
+             letter-spacing:.05em; }
+  .card .v { font-size:18px; font-weight:700; font-variant-numeric:tabular-nums; }
+  #verdict { position:absolute; top:12px; right:12px; padding:6px 12px;
+             border-radius:6px; font-weight:700; font-size:12px; color:#0d0d0d; }
+  #foot { position:absolute; bottom:12px; left:12px; right:12px; display:flex;
+          gap:11px; align-items:center; background:rgba(12,15,18,.86);
+          border:1px solid var(--line); border-radius:6px; padding:7px 11px; }
+  button { font:inherit; padding:4px 13px; cursor:pointer; color:var(--text);
+           background:#222930; border:1px solid #3a434c; border-radius:4px; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  .small { color:var(--muted); font-size:11px; font-variant-numeric:tabular-nums; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <h3>Essai</h3>
+    <div class="ctl"><label>Carburant</label><select id="fuel"></select></div>
+    <div class="ctl"><label>Essai <b id="idx"></b></label><input id="pick" type="range"></div>
+    <div class="legend">
+      <div><span class="dot" style="background:#3987e5"></span> gouttelette au depart</div>
+      <div><span class="dot" style="background:#d95926"></span> extinction de la flamme chaude</div>
+      <div><span class="dot" style="background:#9085e9"></span> extinction de la flamme froide</div>
+    </div>
+    <div class="note" id="lawnote"></div>
+    <div class="note">
+      Les trois diametres sont MESURES. Ils s'emboitent : la goutte brule sous
+      la flamme chaude, celle-ci lache, puis une flamme froide invisible prend
+      le relais jusqu'a son propre diametre d'extinction.
+    </div>
+  </div>
+
+  <div id="stage">
+    <div id="cards">
+      <div class="card"><div class="k">depart</div><div class="v" id="v0">—</div></div>
+      <div class="card"><div class="k">ext. chaude</div><div class="v" id="vh">—</div></div>
+      <div class="card"><div class="k">ext. froide</div><div class="v" id="vc">—</div></div>
+      <div class="card"><div class="k">pression</div><div class="v" id="vp">—</div></div>
+    </div>
+    <div id="verdict">—</div>
+    <div id="foot">
+      <button id="play">Lecture</button>
+      <input id="scrub" type="range" min="0" max="1000" value="0" style="flex:1">
+      <span class="small">t = <b id="tNow">0.00</b> s · d = <b id="dNow">—</b> mm
+        · phase <b id="phase">—</b> · <b id="fps">—</b> img/s</span>
+    </div>
+  </div>
+</div>
+
+<script type="application/json" id="payload">/*__PAYLOAD__*/</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+const P = JSON.parse(document.getElementById('payload').textContent);
+const el = id => document.getElementById(id);
+
+const fuels = [...new Set(P.tests.map(t => t.fuel))].sort();
+fuels.forEach(f => { const o = document.createElement('option');
+                     o.value = o.textContent = f; el('fuel').appendChild(o); });
+
+const stage = el('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(stage.clientWidth, stage.clientHeight);
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d0d);
+const camera = new THREE.PerspectiveCamera(40, stage.clientWidth/stage.clientHeight, 0.01, 200);
+scene.add(new THREE.AmbientLight(0xffffff, 0.62));
+const key = new THREE.DirectionalLight(0xffffff, 1.5); key.position.set(1,1.2,1); scene.add(key);
+const rim = new THREE.DirectionalLight(0x6a9bff, 0.45); rim.position.set(-1,-.5,-1); scene.add(rim);
+
+// Une seule geometrie de rayon 1 : tout le reste est une matrice d'echelle.
+const unit = new THREE.SphereGeometry(1, 48, 32);
+const shell = (colour, opacity, wire) => {
+  const m = new THREE.Mesh(unit, wire
+    ? new THREE.MeshBasicMaterial({ color:colour, wireframe:true, transparent:true, opacity })
+    : new THREE.MeshStandardMaterial({ color:colour, roughness:.34, metalness:.05,
+        transparent:true, opacity, emissive:colour, emissiveIntensity:.14 }));
+  scene.add(m); return m;
+};
+const ghostStart = shell(0x3987e5, 0.16, true);
+const ghostHot   = shell(0xd95926, 0.20, true);
+const ghostCool  = shell(0x9085e9, 0.26, true);
+const droplet    = shell(0xf2a649, 0.95, false);
+
+const target = { d0:4, dh:3, dc:1, kh:.4, kc:.35, hot:1, cool:1 };
+const shown  = { ...target };
+let elapsed = 0, running = false, dragging = false, animatable = false;
+let frames = 0, lastSample = performance.now(), lastFrame = performance.now();
+
+function pool() { return P.tests.filter(t => t.fuel === el('fuel').value); }
+
+function apply() {
+  const list = pool();
+  el('pick').max = String(Math.max(list.length - 1, 0));
+  const t = list[Math.min(+el('pick').value, list.length - 1)];
+  if (!t) return;
+
+  el('idx').textContent = `${+el('pick').value + 1} / ${list.length}`;
+  el('v0').textContent = t.d0.toFixed(2);
+  el('vh').textContent = t.dh.toFixed(2);
+  el('vc').textContent = t.dc > 0 ? t.dc.toFixed(2) : 'aucune';
+  el('vp').textContent = t.p.toFixed(2);
+
+  const badge = el('verdict');
+  if (t.dc > 0) { badge.style.background = '#9085e9'; badge.textContent = 'Flamme froide observee'; }
+  else { badge.style.background = '#4d5a66'; badge.textContent = 'Aucune flamme froide'; }
+
+  // L'animation n'est proposee que la ou la loi en d2 a ete verifiee.
+  animatable = P.animatable.includes(t.fuel) && t.dh < t.d0 && t.kh > 0;
+  el('play').disabled = !animatable;
+  el('lawnote').innerHTML = animatable
+    ? 'Loi en d² verifiee sur ce carburant (correlation +0.889) : la '
+      + 'trajectoire est animable.'
+    : '<span class="warn">Animation indisponible.</span> Sur les melanges '
+      + 'dodecane/iso-dodecane la loi en d² ne tient pas (correlation +0.03 a '
+      + '+0.50) : les constituants s\\'evaporent a des rythmes differents, et '
+      + 'certaines gouttes GONFLENT avant de bruler. Les trois diametres '
+      + 'restent mesures et exacts ; seule la trajectoire entre eux serait '
+      + 'inventee.';
+  if (!animatable) { running = false; el('play').textContent = 'Lecture'; elapsed = 0; }
+
+  const hotTime = t.kh > 0 ? Math.max((t.d0*t.d0 - t.dh*t.dh) / t.kh, 0.1) : 1;
+  const coolTime = (t.dc > 0 && t.kc > 0) ? Math.max((t.dh*t.dh - t.dc*t.dc) / t.kc, 0.1) : 0;
+  Object.assign(target, { d0:t.d0, dh:t.dh, dc:t.dc, kh:t.kh, kc:t.kc,
+                          hot:hotTime, cool:coolTime });
+}
+
+['fuel','pick'].forEach(id => el(id).addEventListener('input', () => {
+  if (id === 'fuel') el('pick').value = '0';
+  apply();
+}));
+el('play').onclick = function () {
+  if (!animatable) return;
+  running = !running; this.textContent = running ? 'Pause' : 'Lecture';
+};
+el('scrub').addEventListener('input', () => {
+  dragging = true;
+  elapsed = +el('scrub').value / 1000 * (shown.hot + shown.cool);
+});
+el('scrub').addEventListener('change', () => { dragging = false; });
+addEventListener('resize', () => {
+  camera.aspect = stage.clientWidth/stage.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+});
+
+function animate(now) {
+  requestAnimationFrame(animate);
+  const dt = Math.min((now - lastFrame)/1000, 0.1); lastFrame = now;
+  const ease = 1 - Math.pow(0.002, dt);
+  for (const k of Object.keys(target)) shown[k] += (target[k] - shown[k]) * ease;
+
+  const total = shown.hot + shown.cool;
+  if (running && !dragging) { elapsed += dt; if (elapsed > total + 0.4) elapsed = 0; }
+
+  // Deux phases : la flamme chaude consume a k_hot jusqu'a son extinction,
+  // puis la flamme froide prend le relais a k_cool, plus lente.
+  let d, phase;
+  if (!animatable) { d = shown.d0; phase = 'statique'; }
+  else if (elapsed <= shown.hot) {
+    d = Math.sqrt(Math.max(shown.d0*shown.d0 - shown.kh*elapsed, shown.dh*shown.dh));
+    phase = 'chaude';
+  } else if (shown.cool > 0) {
+    const u = elapsed - shown.hot;
+    d = Math.sqrt(Math.max(shown.dh*shown.dh - shown.kc*u, shown.dc*shown.dc));
+    phase = 'froide';
+  } else { d = shown.dh; phase = 'eteinte'; }
+
+  droplet.scale.setScalar(d/2);
+  droplet.material.color.setHex(phase === 'froide' ? 0x9085e9 : 0xf2a649);
+  ghostStart.scale.setScalar(shown.d0/2);
+  ghostHot.scale.setScalar(shown.dh/2);
+  ghostCool.visible = shown.dc > 0.01;
+  ghostCool.scale.setScalar(Math.max(shown.dc, 0.01)/2);
+  droplet.rotation.y += dt * 0.22;
+
+  const reach = shown.d0 * 1.5;
+  camera.position.set(reach*0.75, reach*0.45, reach);
+  camera.lookAt(0,0,0);
+
+  el('tNow').textContent = elapsed.toFixed(2);
+  el('dNow').textContent = d.toFixed(2);
+  el('phase').textContent = phase;
+  if (!dragging && total > 0) el('scrub').value = String(Math.round(elapsed/total*1000));
+
+  renderer.render(scene, camera);
+  frames++;
+  if (now - lastSample > 500) {
+    el('fps').textContent = (frames*1000/(now-lastSample)).toFixed(0);
+    frames = 0; lastSample = now;
+  }
+}
+apply(); Object.assign(shown, target);
+requestAnimationFrame(animate);
+</script>
+</body>
+</html>

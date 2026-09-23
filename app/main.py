@@ -77,6 +77,8 @@ BADGE = {
 OUTCOME_LABELS = {
     "suppression": ("Probabilite d'extinction", "la flamme s'eteint"),
     "sustainment": ("Probabilite d'auto-extinction", "la flamme meurt seule"),
+    "cool_flames": ("Probabilite de flamme froide",
+                    "une combustion invisible persiste apres l'extinction visible"),
 }
 
 SUGGESTIONS = {
@@ -99,6 +101,16 @@ SUGGESTIONS = {
         "what is the smoke point of a laminar diffusion flame",
         "soot formation in coflow jet flames",
         "effect of nozzle diameter on flame length",
+    ],
+    "cool_flames": [
+        "what is a cool flame and when does it appear",
+        "cool flame extinction diameter versus pressure",
+        "low temperature chemistry of dodecane droplets",
+    ],
+    "ground": [
+        "counterflow burner extinction strain rate",
+        "ozone sensitized cool flames",
+        "difference between one gravity and microgravity flames",
     ],
 }
 
@@ -153,7 +165,7 @@ def render_control(control, pool: pd.DataFrame, restricted: bool):
 st.title("Fotia")
 st.caption(
     "Donnees de combustion en microgravite de la NASA, rassemblees et rendues "
-    "comparables. 24 investigations, 10 exploitables, 4 modules branches."
+    "comparables. 24 investigations, 10 exploitables, 6 modules branches."
 )
 
 available = ready_modules()

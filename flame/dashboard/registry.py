@@ -104,6 +104,12 @@ def _psi101():
     return load()
 
 
+def _psi142():
+    from flame.loaders.psi142 import load
+
+    return load()
+
+
 MODULES: dict[str, Module] = {
     "suppression": Module(
         key="suppression",
@@ -147,8 +153,23 @@ MODULES: dict[str, Module] = {
         ],
         label="cool_flame",
         outcome_kind="classification",
-        ready=False,
-        note="Etiquette tres desequilibree, 85/15. Le farnesane n'a aucune ligne exploitable.",
+        ready=True,
+        rare_label=0,
+        note=(
+            "Etiquette tres desequilibree, 85/15, mais la meilleure AUC du "
+            "catalogue (0.913). Le farnesane n'a aucun essai depouille : trois "
+            "carburants, pas quatre."
+        ),
+        controls=[
+            Control("fuel", "Carburant"),
+            Control("pressure_atm", "Pression", "atm"),
+            Control("o2_frac", "Oxygene", "fraction molaire"),
+            Control("he_frac", "Helium", "fraction molaire"),
+            Control("fiber", "Fibre de support"),
+            Control("d0_mm", "Diametre initial", "mm"),
+            Control("ignition_power_w", "Puissance d'allumage", "W"),
+            Control("ignition_time_ms", "Duree d'allumage", "ms"),
+        ],
     ),
     "sustainment": Module(
         key="sustainment",
@@ -265,10 +286,26 @@ MODULES: dict[str, Module] = {
         key="ground",
         name="Reference au sol",
         question="Quelles sont les limites d'extinction a 1 g ?",
-        regime="brûleur a contre-courant, gravite terrestre",
+        regime="brûleur a contre-courant, GRAVITE TERRESTRE",
         investigation="PSI-142",
+        loader=_psi142,
+        features=["fuel", "fuel_mass_fraction", "extinction_type", "ozone"],
+        target="extinction_strain_rate_1_s",
+        target_label="Vitesse d'etirement a l'extinction",
+        target_unit="1/s",
+        target_meaning="eleve = la flamme resiste a un etirement plus fort",
         outcome_kind="regression",
-        ready=False,
+        ready=True,
+        controls=[
+            Control("fuel", "Alcane"),
+            Control("fuel_mass_fraction", "Richesse", "fraction massique"),
+            Control("extinction_type", "Type de flamme",
+                    help="cool : flamme froide. hot : flamme chaude."),
+            Control("ozone", "Ozone ajoute",
+                    help="ATTENTION : les campagnes avec et sans ozone ne "
+                         "couvrent pas les memes richesses, leurs bandes ne se "
+                         "recouvrent pas du tout."),
+        ],
         note="1 g. Ne jamais mettre en commun avec l'ISS sans le dire.",
     ),
 }

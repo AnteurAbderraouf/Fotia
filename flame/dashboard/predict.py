@@ -70,6 +70,15 @@ def _estimator(module: Module):
     Le choix se mesure jeu par jeu, il ne se decrete pas.
     """
     if module.outcome_kind == "regression":
+        # PSI-142 est le seul jeu ou le lineaire fait PIRE que de repondre la
+        # moyenne (R2 -0.102 contre -0.089) : la limite d'extinction y depend
+        # du carburant, de l'ozone et de la richesse de facon non additive.
+        if module.key == "ground":
+            from sklearn.ensemble import RandomForestRegressor
+
+            return RandomForestRegressor(
+                n_estimators=300, max_depth=8, random_state=0
+            )
         from sklearn.linear_model import Ridge
 
         return Pipeline([("scale", StandardScaler()), ("model", Ridge())])

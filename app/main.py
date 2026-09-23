@@ -67,6 +67,7 @@ from flame.dashboard.registry import (  # noqa: E402
 from flame.models.droplet_burn import burn_duration  # noqa: E402
 from flame.viz.droplet_anim import page as droplet_page  # noqa: E402
 from flame.viz.cool_flame_live import page as cool_flame_page  # noqa: E402
+from flame.viz.saffire_live import page as saffire_page  # noqa: E402
 from flame.viz.droplet_live import page as live_page  # noqa: E402
 
 st.set_page_config(page_title="Fotia — combustion en microgravite", layout="wide")
@@ -624,6 +625,16 @@ with tab_gravity:
     st.caption(
         f"Au total, {burned} des {len(saffire)} echantillons ont brule en "
         "microgravite. Ces neuf lignes ne se modelisent pas : elles se lisent."
+    )
+
+    st.markdown("**Les bandes, cote a cote**")
+    components.html(saffire_page(), height=480, scrolling=False)
+    st.caption(
+        "Chaque bande fait 29 cm sur 5, et la portion sombre est la longueur "
+        "REELLEMENT brulee relevee par NASA. Choisir 2-1 ou 2-4 : le silicone "
+        "y brule entierement a 1 g et pas du tout en microgravite. L'epaisseur "
+        "est exageree a l'ecran — 0.27 mm sur 290 mm serait invisible — mais "
+        "les longueurs et largeurs sont a l'echelle."
     )
 
     st.markdown("---")

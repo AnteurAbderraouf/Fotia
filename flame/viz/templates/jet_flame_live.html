@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<style>
+  :root { --bg:#0d0d0d; --panel:#14181d; --line:#2a3138; --text:#e8ecef;
+          --muted:#898781; --accent:#f2a649; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+               font:13px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;
+               overflow:hidden; }
+  #app { display:grid; grid-template-columns:238px 1fr; height:100%; }
+  #panel { background:var(--panel); border-right:1px solid var(--line);
+           padding:12px 14px; overflow-y:auto; }
+  h3 { margin:0 0 9px; font-size:12px; text-transform:uppercase;
+       letter-spacing:.06em; color:var(--muted); font-weight:600; }
+  select { width:100%; font:inherit; padding:4px 6px; background:#222930;
+           color:var(--text); border:1px solid #3a434c; border-radius:4px;
+           margin-bottom:9px; }
+  label.chk { display:flex; align-items:center; gap:7px; font-size:12px;
+              color:var(--muted); margin:9px 0; }
+  .row { display:flex; justify-content:space-between; font-size:12px;
+         padding:3px 0; border-bottom:1px solid #1f242a; }
+  .row span { color:var(--muted); }
+  .row b { font-variant-numeric:tabular-nums; }
+  .note { color:var(--muted); font-size:11px; margin-top:10px; line-height:1.45; }
+  .warn { color:#fab219; }
+  #stage { position:relative; min-width:0; }
+  canvas { display:block; }
+  #foot { position:absolute; bottom:12px; left:12px; right:12px;
+          background:rgba(12,15,18,.86); border:1px solid var(--line);
+          border-radius:6px; padding:7px 11px; color:var(--muted);
+          font-size:11.5px; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="panel">
+    <h3>Essai</h3>
+    <select id="fuel"></select>
+    <select id="pick"></select>
+    <label class="chk"><input id="compare" type="checkbox"> comparer les carburants</label>
+    <div id="facts"></div>
+    <div class="note">
+      <span class="warn">Le profil est une convention.</span> Trois dimensions
+      sont MESUREES : le diametre de buse, la largeur maximale et la longueur
+      au point de fumee. La silhouette entre elles ne l'est pas — aucune
+      colonne ne dit ou la flamme atteint sa largeur maximale le long de son
+      axe. La forme dessinee est celle, connue, d'une flamme de diffusion
+      laminaire.
+    </div>
+    <div class="note">
+      Ce qui se compare valablement ici, ce sont les TAILLES. Une flamme courte
+      signifie un carburant qui fume beaucoup.
+    </div>
+  </div>
+  <div id="stage"><div id="foot"></div></div>
+</div>
+
+<script type="application/json" id="payload">/*__PAYLOAD__*/</script>
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js" } }
+</script>
+<script type="module">
+import * as THREE from 'three';
+const P = JSON.parse(document.getElementById('payload').textContent);
+const el = id => document.getElementById(id);
+const COLOURS = { ethylene:0x3987e5, propane:0x1baf7a, propylene:0xd95926 };
+
+[...new Set(P.tests.map(t => t.fuel))].sort().forEach(f => {
+  const o = document.createElement('option'); o.value = o.textContent = f;
+  el('fuel').appendChild(o);
+});
+
+const stage = el('stage');
+const renderer = new THREE.WebGLRenderer({ antialias:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(stage.clientWidth, stage.clientHeight);
+stage.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0d0d0d);
+const camera = new THREE.PerspectiveCamera(38, stage.clientWidth/stage.clientHeight, 0.1, 900);
+scene.add(new THREE.AmbientLight(0xffffff, 0.66));
+const key = new THREE.DirectionalLight(0xffffff, 1.35); key.position.set(1,1,1); scene.add(key);
+const group = new THREE.Group(); scene.add(group);
+
+// Silhouette CONVENTIONNELLE d'une flamme de diffusion laminaire : elle part
+// du diametre de buse, s'evase jusqu'a la largeur maximale vers le tiers de
+// sa hauteur, puis se referme en pointe. Seules les trois dimensions sont
+// mesurees ; la courbe entre elles est un choix de dessin.
+function silhouette(base, maxWidth, length, steps = 44) {
+  const points = [];
+  for (let i = 0; i <= steps; i++) {
+    const u = i / steps;
+    // u = 0 a la buse, 1 a la pointe. Le maximum tombe a u = 0.33.
+    const swell = Math.sin(Math.pow(u, 0.55) * Math.PI);
+    const radius = (base / 2) * (1 - u) + (maxWidth / 2) * swell;
+    points.push(new THREE.Vector2(Math.max(radius, 0.01), u * length));
+  }
+  return points;
+}
+
+function flame(test, offsetX, colour) {
+  const geometry = new THREE.LatheGeometry(
+    silhouette(test.nozzle, test.width, test.length), 40
+  );
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({
+    color: colour, roughness: 0.4, metalness: 0.04, transparent: true,
+    opacity: 0.86, emissive: colour, emissiveIntensity: 0.22,
+    side: THREE.DoubleSide,
+  }));
+  mesh.position.x = offsetX;
+  return mesh;
+}
+
+function fill() {
+  const list = P.tests.filter(t => t.fuel === el('fuel').value);
+  el('pick').innerHTML = '';
+  list.forEach((t, i) => {
+    const o = document.createElement('option');
+    o.value = String(i);
+    o.textContent = `${t.length.toFixed(1)} mm · buse ${t.nozzle} mm`;
+    el('pick').appendChild(o);
+  });
+  return list;
+}
+
+function show() {
+  const list = fill.list || fill();
+  group.clear();
+  let span;
+
+  if (el('compare').checked) {
+    // Un essai median par carburant, pour que la comparaison porte sur le
+    // carburant et non sur un essai extreme.
+    const fuels = [...new Set(P.tests.map(t => t.fuel))].sort();
+    let x = 0;
+    span = 0;
+    fuels.forEach(f => {
+      const pool = P.tests.filter(t => t.fuel === f)
+                          .sort((a,b) => a.length - b.length);
+      const t = pool[Math.floor(pool.length / 2)];
+      group.add(flame(t, x, COLOURS[f] ?? 0xf2a649));
+      span = Math.max(span, t.length);
+      x += 26;
+    });
+    group.position.x = -(fuels.length - 1) * 13;
+    el('facts').innerHTML = fuels.map(f => {
+      const pool = P.tests.filter(t => t.fuel === f);
+      const median = pool.sort((a,b)=>a.length-b.length)[Math.floor(pool.length/2)];
+      return `<div class="row"><span>${f}</span><b>${median.length.toFixed(1)} mm</b></div>`;
+    }).join('');
+    el('foot').textContent =
+      'Essai median de chaque carburant. Le propylene fume nettement plus : '
+      + 'sa flamme lache bien plus court.';
+  } else {
+    const t = list[Math.min(+el('pick').value || 0, list.length - 1)];
+    if (!t) return;
+    group.position.x = 0;
+    group.add(flame(t, 0, COLOURS[t.fuel] ?? 0xf2a649));
+    span = t.length;
+    el('facts').innerHTML =
+      `<div class="row"><span>carburant</span><b>${t.fuel}</b></div>` +
+      `<div class="row"><span>fraction</span><b>${t.fraction}</b></div>` +
+      `<div class="row"><span>buse</span><b>${t.nozzle} mm</b></div>` +
+      `<div class="row"><span>largeur max</span><b>${t.width.toFixed(2)} mm</b></div>` +
+      `<div class="row"><span>longueur</span><b>${t.length.toFixed(1)} mm</b></div>` +
+      `<div class="row"><span>co-courant</span><b>${t.coflow.toFixed(1)} cm/s</b></div>`;
+    el('foot').textContent =
+      `Rapport longueur/largeur : ${(t.length / t.width).toFixed(1)}. `
+      + 'Plus la flamme est courte, plus le carburant produit de suie.';
+  }
+
+  const reach = Math.max(span, 20) * 1.5;
+  camera.position.set(reach * 0.5, span * 0.5, reach);
+  camera.lookAt(0, span * 0.45, 0);
+}
+
+el('fuel').addEventListener('change', () => { fill.list = fill(); show(); });
+el('pick').addEventListener('change', show);
+el('compare').addEventListener('change', () => {
+  el('fuel').disabled = el('compare').checked;
+  el('pick').disabled = el('compare').checked;
+  show();
+});
+addEventListener('resize', () => {
+  camera.aspect = stage.clientWidth/stage.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(stage.clientWidth, stage.clientHeight);
+});
+
+let spin = 0;
+function loop() {
+  requestAnimationFrame(loop);
+  spin += 0.004;
+  group.rotation.y = spin;
+  renderer.render(scene, camera);
+}
+fill.list = fill(); show(); loop();
+</script>
+</body>
+</html>

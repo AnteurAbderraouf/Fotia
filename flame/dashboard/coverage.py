@@ -44,12 +44,31 @@ MUTED_INK = "#898781"
 SECONDARY_INK = "#c3c2b7"
 MARKER = "#eda100"
 
+# Les libelles d'axe couvrent les variables de TOUS les modules, pas seulement
+# celles de la suppression : la carte de couverture du niveau 3 croise
+# n'importe quelle paire, et un axe intitule « tad_k » ne se lit pas.
 AXIS_LABELS = {
-    "o2_frac": "oxygene (fraction molaire)",
-    "co2_frac": "CO2 ajoute (fraction molaire)",
-    "he_frac": "helium ajoute (fraction molaire)",
-    "pressure_atm": "pression (atm)",
-    "d0_mm": "diametre initial (mm)",
+    "o2_frac": "oxygen (mole fraction)",
+    "co2_frac": "added CO2 (mole fraction)",
+    "he_frac": "added helium (mole fraction)",
+    "pressure_atm": "pressure (atm)",
+    "pressure_bar": "pressure (bar)",
+    "d0_mm": "initial diameter (mm)",
+    "ignition_power_w": "ignition power (W)",
+    "ignition_time_ms": "ignition duration (ms)",
+    "fuel_dilution": "fuel purity (1 = pure)",
+    "fuel_flow_mg_s": "fuel flow (mg/s)",
+    "tad_k": "adiabatic flame temperature (K)",
+    "zst": "stoichiometric mixture fraction",
+    "inlet_velocity_cm_s": "inlet velocity (cm/s)",
+    "duration_s": "heating duration (s)",
+    "primary_aging_s": "primary ageing (s)",
+    "primary_mixing_s": "primary mixing (s)",
+    "net_aging_s": "net ageing (s)",
+    "fuel_fraction": "fuel fraction (1 = pure)",
+    "nozzle_mm": "nozzle diameter (mm)",
+    "coflow_velocity_cm_s": "coflow air velocity (cm/s)",
+    "fuel_mass_fraction": "fuel richness (mass fraction)",
 }
 
 
@@ -102,10 +121,10 @@ def coverage_figure(
             hovertemplate=(
                 f"{AXIS_LABELS.get(x, x)} %{{x}}<br>"
                 f"{AXIS_LABELS.get(y, y)} %{{y}}<br>"
-                "<b>%{z:.0f} essais</b><extra></extra>"
+                "<b>%{z:.0f} tests</b><extra></extra>"
             ),
             colorbar=dict(
-                title=dict(text="essais", side="right"),
+                title=dict(text="tests", side="right"),
                 thickness=11,
                 outlinewidth=0,
                 tickfont=dict(color=MUTED_INK, size=11),
@@ -133,7 +152,7 @@ def coverage_figure(
             ),
             name="position",
             hovertemplate=(
-                f"position courante<br><b>{count} essai(s)</b> dans cette case"
+                f"current setting<br><b>{count} test(s)</b> in this cell"
                 "<extra></extra>"
             ),
             showlegend=False,
@@ -143,8 +162,8 @@ def coverage_figure(
     figure.update_layout(
         title=dict(
             text=(
-                f"{stats['filled']} combinaisons essayees sur {stats['cells']} "
-                f"({stats['share']:.0%})"
+                f"{stats['filled']} of {stats['cells']} combinations were "
+                f"ever run ({stats['share']:.0%})"
             ),
             font=dict(size=13, color=SECONDARY_INK),
             x=0,

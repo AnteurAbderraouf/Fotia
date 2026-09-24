@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -64,37 +64,37 @@
   <div id="panel">
     <h3>Conditions</h3>
     <div class="ctl toggle">
-      <label for="snap"><span>Conditions testees seulement</span></label>
+      <label for="snap"><span>Tested conditions only</span></label>
       <div class="switch">
         <input id="snap" type="checkbox" checked>
         <span id="snapNote"></span>
       </div>
     </div>
-    <div class="ctl"><label>Carburant</label><select id="fuel"></select></div>
-    <div class="ctl"><label>Oxygene <b id="o2v"></b></label><input id="o2" type="range"></div>
-    <div class="ctl"><label>CO2 ajoute <b id="co2v"></b></label><input id="co2" type="range"></div>
-    <div class="ctl"><label>Helium ajoute <b id="hev"></b></label><input id="he" type="range"></div>
-    <div class="ctl"><label>Pression <b id="pv"></b></label><input id="p" type="range"></div>
-    <div class="ctl"><label>Diametre initial <b id="d0v"></b></label><input id="d0" type="range"></div>
+    <div class="ctl"><label>Fuel</label><select id="fuel"></select></div>
+    <div class="ctl"><label>Oxygen <b id="o2v"></b></label><input id="o2" type="range"></div>
+    <div class="ctl"><label>Added CO2 <b id="co2v"></b></label><input id="co2" type="range"></div>
+    <div class="ctl"><label>Added helium <b id="hev"></b></label><input id="he" type="range"></div>
+    <div class="ctl"><label>Pressure <b id="pv"></b></label><input id="p" type="range"></div>
+    <div class="ctl"><label>Initial diameter <b id="d0v"></b></label><input id="d0" type="range"></div>
     <div class="note" id="n2note"></div>
-    <button id="snapshot">Aller sur un essai reel</button>
+    <button id="snapshot">Jump to a real test</button>
     <div class="note">
-      Tout est calcule dans cette page : les trois modeles sont lineaires, donc
-      un produit scalaire. Rien ne repasse par le serveur, d'ou l'absence de
-      coupure.
+      Everything is computed inside this page: all three models are linear, so
+      each one is a dot product. Nothing goes back to the server, which is why
+      the view never cuts out.
     </div>
   </div>
 
   <div id="stage">
     <div id="readout">
       <div class="card"><div class="k">extinction</div>
-        <div class="v" id="pExt">—</div><div class="u">probabilite</div></div>
-      <div class="card"><div class="k">diametre final</div>
+        <div class="v" id="pExt">—</div><div class="u">chance</div></div>
+      <div class="card"><div class="k">final diameter</div>
         <div class="v" id="dExt">—</div><div class="u" id="dErr">mm</div></div>
-      <div class="card"><div class="k">vitesse K</div>
+      <div class="card"><div class="k">burning rate K</div>
         <div class="v" id="kVal">—</div><div class="u" id="kErr">mm²/s</div></div>
-      <div class="card"><div class="k">duree</div>
-        <div class="v" id="dur">—</div><div class="u">s, loi en d²</div></div>
+      <div class="card"><div class="k">duration</div>
+        <div class="v" id="dur">—</div><div class="u">s, from the d² law</div></div>
     </div>
     <div id="verdict">—</div>
     <div id="why"></div>
@@ -102,7 +102,7 @@
       <button id="play">Pause</button>
       <input id="scrub" type="range" min="0" max="1000" value="0">
       <span class="small">t = <b id="tNow">0.00</b> s · d = <b id="dNow">—</b> mm
-        · <b id="fps">—</b> img/s</span>
+        · <b id="fps">—</b> fps</span>
     </div>
   </div>
 </div>
@@ -156,9 +156,9 @@ function proximity(row) {
 }
 
 const VERDICTS = {
-  inside:        ['#0ca30c', 'Dans le domaine teste'],
-  extrapolation: ['#fab219', 'Extrapolation'],
-  outside:       ['#d03b3b', 'Hors du domaine teste']
+  inside:        ['#35b37e', 'Measured here'],
+  extrapolation: ['#e0a327', 'Between tests'],
+  outside:       ['#d9534f', 'Never tested']
 };
 
 // --- commandes --------------------------------------------------------------
@@ -241,8 +241,8 @@ function recompute() {
   el('d0v').textContent  = d0.toFixed(2) + ' mm';
   const n2 = 1 - o2 - co2 - he;
   el('n2note').textContent = n2 < 0
-    ? 'Les fractions molaires somment a plus de 1 : melange impossible.'
-    : 'azote de complement : ' + n2.toFixed(2);
+    ? 'Mole fractions add up to more than 1: impossible mixture.'
+    : 'nitrogen makes up the rest: ' + n2.toFixed(2);
   el('n2note').style.color = n2 < 0 ? '#d03b3b' : '';
 
   const row = {
@@ -269,12 +269,12 @@ function recompute() {
   badge.style.background = colour; badge.textContent = text;
   const near = P.tests[prox.nearest];
   el('why').innerHTML = prox.verdict === 'inside'
-    ? `essai le plus proche : ${near.fuel}, O2 ${near.o2_frac}, CO2 ${near.co2_frac},
+    ? `nearest real test: ${near.fuel}, O2 ${near.o2_frac}, CO2 ${near.co2_frac},
        d0 ${near.d0_mm} mm &rarr; <b>${near.test_end}</b>`
     : (prox.outOfRange
-        ? 'au moins une valeur sort de la plage essayee par NASA'
-        : `l'essai le plus proche est ${(prox.distance/P.proximity.typical).toFixed(1)}
-           fois plus loin que d'ordinaire`);
+        ? 'at least one value falls outside the range NASA ever ran'
+        : `the nearest run is ${(prox.distance/P.proximity.typical).toFixed(1)}
+           times further away than usual`);
 
   Object.assign(target, { d0, dext, k, duration });
 }
@@ -293,8 +293,8 @@ function updateSnapNote() {
   const on = el('snap').checked;
   const counts = ['o2_frac','co2_frac','he_frac'].map(k => P.ranges[k].values.length);
   el('snapNote').textContent = on
-    ? `O2 ${counts[0]} · CO2 ${counts[1]} · He ${counts[2]} valeurs essayees`
-    : 'libre : les curseurs passent entre les essais';
+    ? `O2 ${counts[0]} · CO2 ${counts[1]} · He ${counts[2]} tested values`
+    : 'free: the sliders now pass between the tests';
 }
 
 // Se placer sur un essai NASA reel : toutes ses conditions d'un coup, donc
@@ -313,7 +313,7 @@ let elapsed = 0, running = true, dragging = false;
 let frames = 0, lastSample = performance.now(), lastFrame = performance.now();
 
 el('play').onclick = function () {
-  running = !running; this.textContent = running ? 'Pause' : 'Lecture';
+  running = !running; this.textContent = running ? 'Pause' : 'Play';
 };
 el('scrub').addEventListener('input', () => {
   dragging = true; elapsed = +el('scrub').value / 1000 * shown.duration;

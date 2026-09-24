@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -37,26 +37,26 @@
 <body>
 <div id="app">
   <div id="panel">
-    <h3>Echantillon</h3>
+    <h3>Sample</h3>
     <select id="pick"></select>
     <div id="facts" style="margin-top:11px"></div>
     <div class="legend">
-      <div><span class="dot" style="background:#4a4a46"></span> non brule</div>
-      <div><span class="dot" style="background:#2a1a12"></span> brule</div>
+      <div><span class="dot" style="background:#4a4a46"></span> unburned</div>
+      <div><span class="dot" style="background:#2a1a12"></span> burned</div>
     </div>
     <div class="note">
-      Saffire-II, neuf echantillons. Chaque bande fait 29 cm sur 5. La portion
-      sombre est la longueur reellement brulee, relevee par NASA.
+      Saffire-II, nine samples. Each strip is 29 by 5 cm. The dark portion is
+      the length that actually burned, as recorded by NASA.
     </div>
     <div class="note">
-      « Complete » dans la colonne NASA signifie que l'echantillon a brule
-      entierement : la portion brulee vaut alors toute la bande.
+      A NASA column reading “complete” means the sample burned end to end,
+      so the burned portion is the whole strip.
     </div>
   </div>
   <div id="stage">
     <div id="labels">
-      <div class="tag" id="tagUg" style="background:#3987e5">MICROGRAVITE</div>
-      <div class="tag" id="tagG1" style="background:#d95926">GRAVITE TERRESTRE</div>
+      <div class="tag" id="tagUg" style="background:#3987e5">MICROGRAVITY</div>
+      <div class="tag" id="tagG1" style="background:#d95926">EARTH GRAVITY</div>
     </div>
     <div id="foot" id="caption"></div>
   </div>
@@ -122,20 +122,20 @@ function show() {
 
   const pct = v => s.length > 0 ? Math.round(v / s.length * 100) : 0;
   el('facts').innerHTML =
-    `<div class="row"><span>materiau</span><b>${s.material}</b></div>` +
-    `<div class="row"><span>bande</span><b>${s.length} x ${s.width} cm</b></div>` +
-    `<div class="row"><span>epaisseur</span><b>${s.thickness ? s.thickness + ' mm' : 'non relevee'}</b></div>` +
-    `<div class="row"><span>brule en ug</span><b>${s.ugBurn} cm (${pct(s.ugBurn)} %)</b></div>` +
-    `<div class="row"><span>brule a 1 g</span><b>${s.g1Burn} cm (${pct(s.g1Burn)} %)</b></div>` +
-    `<div class="row"><span>vitesse ug</span><b>${s.ugRate || '—'}</b></div>` +
-    `<div class="row"><span>vitesse 1 g</span><b>${s.g1Rate || '—'}</b></div>`;
+    `<div class="row"><span>material</span><b>${s.material}</b></div>` +
+    `<div class="row"><span>strip</span><b>${s.length} x ${s.width} cm</b></div>` +
+    `<div class="row"><span>thickness</span><b>${s.thickness ? s.thickness + ' mm' : 'not recorded'}</b></div>` +
+    `<div class="row"><span>burned in µg</span><b>${s.ugBurn} cm (${pct(s.ugBurn)} %)</b></div>` +
+    `<div class="row"><span>burned at 1 g</span><b>${s.g1Burn} cm (${pct(s.g1Burn)} %)</b></div>` +
+    `<div class="row"><span>rate in µg</span><b>${s.ugRate || '—'}</b></div>` +
+    `<div class="row"><span>rate at 1 g</span><b>${s.g1Rate || '—'}</b></div>`;
 
   el('foot').textContent =
     s.ugBurn === 0 && s.g1Burn > 0
-      ? `Ce materiau ne brule PAS en microgravite, alors qu'il brule sur ${pct(s.g1Burn)} % de la bande a 1 g.`
+      ? `This material does NOT burn in microgravity, while it burns over ${pct(s.g1Burn)} % of the strip at 1 g.`
       : (s.ugBurn > 0 && s.g1Burn > 0
-          ? `Brule dans les deux regimes : ${pct(s.ugBurn)} % en microgravite, ${pct(s.g1Burn)} % a 1 g.`
-          : `Releve NASA : ${s.ugRaw} en microgravite, ${s.g1Raw} a 1 g.`);
+          ? `Burns in both regimes: ${pct(s.ugBurn)} % in microgravity, ${pct(s.g1Burn)} % at 1 g.`
+          : `NASA's own wording: ${s.ugRaw} in microgravity, ${s.g1Raw} at 1 g.`);
 }
 el('pick').addEventListener('change', show);
 

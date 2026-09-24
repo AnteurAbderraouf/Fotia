@@ -116,35 +116,39 @@ def _psi25():
     return load()
 
 
+# TOUT CE QUI EST AFFICHE EST EN ANGLAIS : les noms de modules, les etiquettes
+# de commande, les unites, les aides et les remarques. Le code et ses
+# commentaires restent en francais. Un panneau de commandes a moitie traduit
+# serait pire que pas traduit du tout.
 MODULES: dict[str, Module] = {
     "suppression": Module(
         key="suppression",
         name="Suppression",
-        question="Combien de CO2 ou d'helium faut-il pour eteindre cette flamme ?",
-        regime="gouttelette de carburant liquide, microgravite",
+        question="How much CO2 or helium does it take to put this flame out?",
+        regime="liquid fuel droplet, microgravity",
         investigation="PSI-69",
         loader=_psi69,
         features=["fuel", "pressure_mmhg", "o2_frac", "co2_frac", "he_frac", "d0_mm"],
         label="extinction",
         outcome_kind="classification",
         ready=True,
-        note="Seul jeu du catalogue portant sur la suppression d'incendie.",
+        note="The only dataset in the catalogue about putting a fire out.",
         rare_label=0,
         controls=[
-            Control("fuel", "Carburant"),
-            Control("o2_frac", "Oxygene", "fraction molaire"),
-            Control("co2_frac", "CO2 ajoute", "fraction molaire"),
-            Control("he_frac", "Helium ajoute", "fraction molaire"),
-            Control("pressure_atm", "Pression", "atm"),
-            Control("d0_mm", "Diametre initial de la goutte", "mm"),
+            Control("fuel", "Fuel"),
+            Control("o2_frac", "Oxygen", "mole fraction"),
+            Control("co2_frac", "Added CO2", "mole fraction"),
+            Control("he_frac", "Added helium", "mole fraction"),
+            Control("pressure_atm", "Pressure", "atm"),
+            Control("d0_mm", "Initial droplet diameter", "mm"),
         ],
         unit_conversions={"pressure_mmhg": ("pressure_atm", 760.0)},
     ),
     "cool_flames": Module(
         key="cool_flames",
-        name="Flammes froides",
-        question="Une combustion invisible persiste-t-elle apres l'extinction visible ?",
-        regime="gouttelette d'alcane lourd, microgravite",
+        name="Cool flames",
+        question="Does invisible burning carry on after the visible flame dies?",
+        regime="heavy alkane droplet, microgravity",
         investigation="PSI-39",
         loader=_psi39,
         features=[
@@ -162,26 +166,25 @@ MODULES: dict[str, Module] = {
         ready=True,
         rare_label=0,
         note=(
-            "Etiquette tres desequilibree, 85/15, mais la meilleure AUC du "
-            "catalogue (0.913). Le farnesane n'a aucun essai depouille : trois "
-            "carburants, pas quatre."
+            "Badly skewed label, 85/15, yet the best AUC in the catalogue "
+            "(0.913). Farnesane has no test written up: three fuels, not four."
         ),
         controls=[
-            Control("fuel", "Carburant"),
-            Control("pressure_atm", "Pression", "atm"),
-            Control("o2_frac", "Oxygene", "fraction molaire"),
-            Control("he_frac", "Helium", "fraction molaire"),
-            Control("fiber", "Fibre de support"),
-            Control("d0_mm", "Diametre initial", "mm"),
-            Control("ignition_power_w", "Puissance d'allumage", "W"),
-            Control("ignition_time_ms", "Duree d'allumage", "ms"),
+            Control("fuel", "Fuel"),
+            Control("pressure_atm", "Pressure", "atm"),
+            Control("o2_frac", "Oxygen", "mole fraction"),
+            Control("he_frac", "Helium", "mole fraction"),
+            Control("fiber", "Support fibre"),
+            Control("d0_mm", "Initial diameter", "mm"),
+            Control("ignition_power_w", "Ignition power", "W"),
+            Control("ignition_time_ms", "Ignition duration", "ms"),
         ],
     ),
     "sustainment": Module(
         key="sustainment",
-        name="Auto-entretien",
-        question="Une flamme de gaz se maintient-elle seule ou s'eteint-elle ?",
-        regime="brûleur a gaz spherique, microgravite",
+        name="Self-sustainment",
+        question="Does a gas flame keep itself alive, or die on its own?",
+        regime="spherical gas burner, microgravity",
         investigation="PSI-159",
         loader=_psi159,
         features=[
@@ -197,31 +200,31 @@ MODULES: dict[str, Module] = {
         outcome_kind="classification",
         ready=True,
         note=(
-            "Etiquette la mieux equilibree du catalogue, plancher 67 %. "
-            "Seul module ou une foret bat la regression : les deux configurations "
-            "ont des effets de signe oppose."
+            "The best balanced label in the catalogue, 67 % floor. The only "
+            "module where a forest beats regression: the two configurations "
+            "pull in opposite directions."
         ),
         rare_label=0,
         controls=[
             Control("flame_type", "Configuration",
-                    help="Normale : carburant injecte dans une ambiance oxydante. "
-                         "Inverse : oxygene injecte dans une ambiance carburee."),
-            Control("fuel", "Carburant"),
-            Control("fuel_dilution", "Purete du carburant", "1 = pur",
-                    help="0.3 signifie dilue a 30 % dans de l'azote."),
-            Control("pressure_bar", "Pression", "bar"),
-            Control("fuel_flow_mg_s", "Debit de carburant", "mg/s"),
-            Control("tad_k", "Temperature de flamme adiabatique", "K", derived=True,
-                    help="CALCULEE a partir du melange, pas reglee independamment."),
-            Control("zst", "Fraction de melange stoechiometrique", "", derived=True,
-                    help="CALCULEE a partir du melange, pas reglee independamment."),
+                    help="Normal: fuel injected into an oxidising surround. "
+                         "Inverse: oxygen injected into a fuel-rich surround."),
+            Control("fuel", "Fuel"),
+            Control("fuel_dilution", "Fuel purity", "1 = pure",
+                    help="0.3 means diluted to 30 % in nitrogen."),
+            Control("pressure_bar", "Pressure", "bar"),
+            Control("fuel_flow_mg_s", "Fuel flow", "mg/s"),
+            Control("tad_k", "Adiabatic flame temperature", "K", derived=True,
+                    help="COMPUTED from the mixture, not set independently."),
+            Control("zst", "Stoichiometric mixture fraction", "", derived=True,
+                    help="COMPUTED from the mixture, not set independently."),
         ],
     ),
     "detection": Module(
         key="detection",
         name="Detection",
-        question="Que voient reellement les detecteurs de fumee de l'ISS ?",
-        regime="materiau solide chauffe, microgravite",
+        question="What do the ISS smoke detectors actually see?",
+        regime="heated solid material, microgravity",
         investigation="PSI-101",
         loader=_psi101,
         features=[
@@ -233,91 +236,92 @@ MODULES: dict[str, Module] = {
             "net_aging_s",
         ],
         target="iss_scatter_volts",
-        target_label="Signal de diffusion ISS",
+        target_label="ISS scattering signal",
         target_unit="V",
-        target_meaning="eleve = le detecteur voit la fumee",
+        target_meaning="high = the detector sees the smoke",
         outcome_kind="regression",
         ready=True,
         note=(
-            "Aucune colonne n'enregistre une alarme : le module repond « combien "
-            "de volts », jamais « ca sonne ». Le canal d'obscurcissement n'est pas "
-            "modelise, 81 % de ses lectures valent zero."
+            "No column records an alarm, so this module answers how many volts "
+            "and never whether it rings. The obscuration channel is not "
+            "modelled: 81 % of its readings are zero."
         ),
         controls=[
-            Control("material", "Materiau"),
-            Control("inlet_velocity_cm_s", "Vitesse d'entree", "cm/s"),
-            Control("duration_s", "Duree de chauffe", "s"),
-            Control("primary_aging_s", "Vieillissement primaire", "s"),
-            Control("primary_mixing_s", "Melange primaire", "s"),
-            Control("net_aging_s", "Vieillissement net", "s"),
+            Control("material", "Material"),
+            Control("inlet_velocity_cm_s", "Inlet velocity", "cm/s"),
+            Control("duration_s", "Heating duration", "s"),
+            Control("primary_aging_s", "Primary ageing", "s"),
+            Control("primary_mixing_s", "Primary mixing", "s"),
+            Control("net_aging_s", "Net ageing", "s"),
         ],
     ),
     "soot": Module(
         key="soot",
-        name="Suie",
-        question="Quelle quantite de fumee ce carburant produit-il ?",
-        regime="flamme de diffusion sur injecteur, microgravite",
+        name="Soot",
+        question="How much smoke does this fuel make?",
+        regime="jet diffusion flame, microgravity",
         investigation="PSI-107",
         loader=_psi107,
         features=["fuel", "fuel_fraction", "nozzle_mm", "coflow_velocity_cm_s"],
         target="smoke_point_mm",
-        target_label="Point de fumee",
+        target_label="Smoke point",
         target_unit="mm",
-        target_meaning="court = le carburant fume beaucoup",
+        target_meaning="short = the fuel smokes heavily",
         outcome_kind="regression",
         ready=True,
         note=(
-            "Une fuite de donnees a ete trouvee ici : les debits NASA sont "
-            "mesures A L'INSTANT du point de fumee, pas regles avant. Les "
-            "retirer fait tomber le R2 de 0.98 a 0.54."
+            "A data leak was found here: NASA's flow columns are measured AT "
+            "the smoke point, not set beforehand. Removing them drops the R2 "
+            "from 0.98 to 0.54."
         ),
         controls=[
-            Control("fuel", "Carburant"),
-            Control("fuel_fraction", "Fraction de carburant", "1 = pur"),
-            Control("nozzle_mm", "Diametre de buse", "mm"),
-            Control("coflow_velocity_cm_s", "Vitesse du co-courant d'air", "cm/s"),
+            Control("fuel", "Fuel"),
+            Control("fuel_fraction", "Fuel fraction", "1 = pure"),
+            Control("nozzle_mm", "Nozzle diameter", "mm"),
+            Control("coflow_velocity_cm_s", "Coflow air velocity", "cm/s"),
         ],
     ),
     "materials": Module(
         key="materials",
-        name="Materiaux",
-        question="Comment ce materiau de vaisseau se comporte-t-il ?",
-        regime="materiau solide, microgravite",
+        name="Materials",
+        question="How does this spacecraft material behave?",
+        regime="solid material, microgravity",
         investigation="PSI-25",
         loader=_psi25,
         outcome_kind="descriptive",
         ready=True,
         note=(
-            "AUCUNE etiquette entrainable, et c'est un constat pas un renoncement : "
-            "20 issues explicites sur 129, et l'oxygene consomme donne des valeurs "
-            "physiquement impossibles. Ce module decrit, il ne predit pas."
+            "NO trainable label, and that is a finding rather than a retreat: "
+            "20 stated outcomes out of 129, and the oxygen consumed reads as "
+            "physically impossible in places. This module describes, it does "
+            "not predict."
         ),
     ),
     "ground": Module(
         key="ground",
-        name="Reference au sol",
-        question="Quelles sont les limites d'extinction a 1 g ?",
-        regime="brûleur a contre-courant, GRAVITE TERRESTRE",
+        name="Ground reference",
+        question="What are the extinction limits at 1 g?",
+        regime="counterflow burner, EARTH GRAVITY",
         investigation="PSI-142",
         loader=_psi142,
         features=["fuel", "fuel_mass_fraction", "extinction_type", "ozone"],
         target="extinction_strain_rate_1_s",
-        target_label="Vitesse d'etirement a l'extinction",
+        target_label="Extinction strain rate",
         target_unit="1/s",
-        target_meaning="eleve = la flamme resiste a un etirement plus fort",
+        target_meaning="high = the flame withstands stronger stretching",
         outcome_kind="regression",
         ready=True,
         controls=[
-            Control("fuel", "Alcane"),
-            Control("fuel_mass_fraction", "Richesse", "fraction massique"),
-            Control("extinction_type", "Type de flamme",
-                    help="cool : flamme froide. hot : flamme chaude."),
-            Control("ozone", "Ozone ajoute",
-                    help="ATTENTION : les campagnes avec et sans ozone ne "
-                         "couvrent pas les memes richesses, leurs bandes ne se "
-                         "recouvrent pas du tout."),
+            Control("fuel", "Alkane"),
+            Control("fuel_mass_fraction", "Fuel richness", "mass fraction"),
+            Control("extinction_type", "Flame type",
+                    help="cool: a cool flame. hot: a hot flame."),
+            Control("ozone", "Added ozone",
+                    help="CAREFUL: the campaigns with and without ozone do not "
+                         "cover the same fuel richness. Their bands do not "
+                         "overlap at all."),
         ],
-        note="1 g. Ne jamais mettre en commun avec l'ISS sans le dire.",
+        note="1 g. Never to be pooled with the ISS without saying so.",
     ),
 }
 
@@ -334,9 +338,9 @@ def coverage_summary() -> pd.DataFrame:
                 "module": module.name,
                 "investigation": module.investigation,
                 "regime": module.regime,
-                "sortie": module.outcome_kind,
-                "branche": "oui" if module.ready else "pas encore",
-                "remarque": module.note,
+                "output": module.outcome_kind,
+                "wired in": "yes" if module.ready else "not yet",
+                "note": module.note,
             }
             for module in MODULES.values()
         ]

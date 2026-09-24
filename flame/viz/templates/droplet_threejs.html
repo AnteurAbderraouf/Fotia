@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -41,16 +41,16 @@
       <div><span class="lbl">t =</span> <b id="tNow">—</b> <span class="lbl">s</span></div>
     </div>
     <div id="law">
-      loi en d² : <b>d²(t) = d₀² − K·t</b><br>
+      the d² law: <b>d²(t) = d₀² − K·t</b><br>
       K = <b id="kVal">—</b> mm²/s<br>
-      verifiee a <b>0.995</b> de correlation<br>
-      sur les durees mesurees
+      holds at <b>0.995</b> correlation<br>
+      against the measured durations
     </div>
   </div>
   <footer>
     <button id="play">Pause</button>
     <input id="scrub" type="range" min="0" max="1000" value="0" step="1">
-    <span class="fps"><b id="fps">—</b> img/s</span>
+    <span class="fps"><b id="fps">—</b> fps</span>
   </footer>
 </div>
 
@@ -119,7 +119,7 @@ let frames = 0, lastSample = performance.now(), lastFrame = performance.now();
 
 playButton.onclick = () => {
   running = !running;
-  playButton.textContent = running ? 'Pause' : 'Lecture';
+  playButton.textContent = running ? 'Pause' : 'Play';
 };
 scrub.addEventListener('input', () => {
   dragging = true;

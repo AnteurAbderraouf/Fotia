@@ -74,20 +74,22 @@ FIELDS_DIR = psi_dir("PSI-115") / "fields"
 NOT_A_GRID = {"manifest.csv", "nodeDiameters.csv", "mesh_axes.csv"}
 MESH_CSV = psi_dir("PSI-115") / "mesh_axes.csv"
 
+# Les libelles partent dans le tableau de bord, donc en anglais comme le reste
+# de ce qui s'affiche. Les commentaires et la documentation restent francais.
 VARIABLE_LABELS = {
-    "temperature": "temperature (normalisee)",
-    "smoke": "fraction de fumee",
-    "numden": "densite numerique de particules",
-    "numdenr": "densite numerique (repere tourne)",
-    "nucrate": "taux de nucleation (log)",
-    "u": "vitesse axiale",
-    "v": "vitesse transverse",
-    "ur": "vitesse axiale (repere tourne)",
-    "vr": "vitesse transverse (repere tourne)",
-    "vort": "vorticite",
-    "speciesmf": "fraction massique d'espece",
-    "vapormf": "fraction massique de vapeur",
-    "dam": "nombre de Damkohler",
+    "temperature": "temperature (normalised)",
+    "smoke": "smoke fraction",
+    "numden": "particle number density",
+    "numdenr": "number density (rotated frame)",
+    "nucrate": "nucleation rate (log)",
+    "u": "axial velocity",
+    "v": "transverse velocity",
+    "ur": "axial velocity (rotated frame)",
+    "vr": "transverse velocity (rotated frame)",
+    "vort": "vorticity",
+    "speciesmf": "species mass fraction",
+    "vapormf": "vapour mass fraction",
+    "dam": "Damkohler number",
 }
 
 FILENAME = re.compile(

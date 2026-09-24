@@ -42,38 +42,42 @@ from flame.common.paths import GROUND, MICROGRAVITY, PROCESSED
 
 # --- Notre evaluation, investigation par investigation -----------------------
 # Ce bloc est le seul contenu redige par nous. Tout le reste est scanne.
+#
+# LE TEXTE EST EN ANGLAIS PARCE QU'IL EST AFFICHE. Tout ce qui apparait dans le
+# tableau de bord est en anglais ; les commentaires et la documentation restent
+# en francais. La regle vaut pour ce fichier comme pour les autres.
 VERDICTS: dict[str, tuple[str, str]] = {
-    "PSI-69": ("exploite", "213 essais etiquetes. Le seul jeu portant sur la suppression d'incendie."),
-    "PSI-39": ("exploite", "146 essais depouilles sur 227. Les 81 autres sont vides, et le farnesane n'a aucune ligne exploitable."),
-    "PSI-159": ("exploite", "272 essais etiquetes. Meilleur equilibre du catalogue, plancher 67 %."),
-    "PSI-101": ("exploite", "134 essais sur materiaux reels. Contient aussi les resultats de vol de PSI-102."),
-    "PSI-107": ("exploite", "70 essais SPICE. La feuille melange trois plateformes de microgravite differentes."),
-    "PSI-25": ("partiel", "129 combustions ISS, mais AUCUNE etiquette entrainable : 20 issues explicites sur 129. Catalogue de materiaux."),
-    "PSI-117": ("exploite", "141 mesures, donnees derriere les figures de quatre articles. Melange mesures et simulations."),
-    "PSI-142": ("exploite", "95 limites d'extinction. Donnees AU SOL, 1 g — ne jamais melanger avec l'ISS."),
-    "PSI-99": ("partiel", "9 echantillons seulement. Trop peu pour entrainer, mais seule source comparant microgravite et 1 g sur la meme ligne."),
-    "PSI-115": ("partiel", "5 cas simules, 42 grilles de champ. Pas de lignes a modeliser ; sert aux vues 3D."),
-    "PSI-10": ("impasse", "327 lignes de conditions, aucune colonne de resultat."),
-    "PSI-20": ("impasse", "Journal par jour d'essai (18 jours), pas de resultat par essai."),
-    "PSI-21": ("impasse", "Journal par jour d'essai (32 jours)."),
-    "PSI-22": ("impasse", "Journal par jour d'essai (22 jours). NASA precise que ce n'est pas destine aux applications spatiales."),
-    "PSI-23": ("impasse", "Journal par jour d'essai (18 jours)."),
-    "PSI-26": ("impasse", "Liste de 122 essais, materiau en texte libre seulement."),
-    "PSI-68": ("impasse", "Matrice d'essais prevus (8 carburants), pas des resultats."),
-    "PSI-98": ("impasse", "2 echantillons. Le fichier de 12 Mo est un index de noms d'images."),
-    "PSI-100": ("impasse", "2 echantillons, index d'images."),
-    "PSI-102": ("impasse", "Matrice d'essais. Ses resultats de vol sont dans le classeur de PSI-101."),
-    "PSI-106": ("impasse", "12 lignes : jour d'essai vers melange de carburant. C'est un planning."),
-    "PSI-47": ("impasse", "Qualification d'instrument (compteur de particules), pas de combustion."),
-    "PSI-60": ("impasse", "Archive de metadonnees seulement."),
-    "PSI-62": ("impasse", "Archive de metadonnees seulement. Valide contre BASS, pas contre FLEX."),
+    "PSI-69": ("exploite", "213 labelled tests. The only dataset here about putting a fire out."),
+    "PSI-39": ("exploite", "146 tests written up out of 227. The other 81 are blank, and farnesane has no usable row at all."),
+    "PSI-159": ("exploite", "272 labelled tests. The best balanced labels in the catalogue, 67 % floor."),
+    "PSI-101": ("exploite", "134 tests on real spacecraft materials. Also carries PSI-102's flight results."),
+    "PSI-107": ("exploite", "70 SPICE tests. The sheet mixes three different microgravity platforms."),
+    "PSI-25": ("partiel", "129 ISS burns, but NO trainable label: only 20 of them state an outcome. A materials catalogue."),
+    "PSI-117": ("exploite", "141 measurements, the data behind the figures of four papers. Mixes measurement and simulation."),
+    "PSI-142": ("exploite", "95 extinction limits. GROUND data, 1 g. Never to be pooled with the ISS."),
+    "PSI-99": ("partiel", "9 samples only. Far too few to train on, and the only source comparing microgravity with 1 g on one row."),
+    "PSI-115": ("partiel", "5 simulated cases, 42 field grids. No rows to model; it feeds the 3D views."),
+    "PSI-10": ("impasse", "327 rows of conditions, not one outcome column."),
+    "PSI-20": ("impasse", "A log by test day (18 days), with no per-test result."),
+    "PSI-21": ("impasse", "A log by test day (32 days)."),
+    "PSI-22": ("impasse", "A log by test day (22 days). NASA states it is not aimed at space applications."),
+    "PSI-23": ("impasse", "A log by test day (18 days)."),
+    "PSI-26": ("impasse", "A list of 122 tests, with the material as free text and nothing else."),
+    "PSI-68": ("impasse", "A matrix of planned tests (8 fuels), not of results."),
+    "PSI-98": ("impasse", "2 samples. The 12 MB file is an index of image names."),
+    "PSI-100": ("impasse", "2 samples, an image index."),
+    "PSI-102": ("impasse", "A test matrix. Its flight results live in PSI-101's workbook."),
+    "PSI-106": ("impasse", "12 rows: test day against fuel mixture. That is a schedule."),
+    "PSI-47": ("impasse", "Instrument qualification (a particle counter), no combustion."),
+    "PSI-60": ("impasse", "Metadata archive only."),
+    "PSI-62": ("impasse", "Metadata archive only. Validated against BASS, not against FLEX."),
 }
 
 VERDICT_ORDER = {"exploite": 0, "partiel": 1, "impasse": 2}
 VERDICT_LABELS = {
-    "exploite": "Exploite",
-    "partiel": "Partiellement utilisable",
-    "impasse": "Sans resultat par essai",
+    "exploite": "Fully used",
+    "partiel": "Partly usable",
+    "impasse": "No per-test outcome",
 }
 
 # Tables produites, pour rattacher un compte de lignes a son investigation.
@@ -170,7 +174,7 @@ def _row_count(psi: str) -> int | None:
 def scan() -> list[Investigation]:
     """Parcourt le disque et construit l'inventaire."""
     found: list[Investigation] = []
-    for parent, category in [(MICROGRAVITY, "microgravite"), (GROUND, "sol")]:
+    for parent, category in [(MICROGRAVITY, "microgravity"), (GROUND, "ground")]:
         if not parent.is_dir():
             continue
         for folder in sorted(parent.iterdir()):
@@ -178,7 +182,7 @@ def scan() -> list[Investigation]:
                 continue
             nasa, objectives = _read_info(folder)
             verdict, assessment = VERDICTS.get(
-                folder.name, ("impasse", "Non evaluee.")
+                folder.name, ("impasse", "Not assessed.")
             )
             found.append(
                 Investigation(
@@ -202,17 +206,17 @@ def table() -> pd.DataFrame:
         [
             {
                 "PSI": item.psi,
-                "verdict": VERDICT_LABELS[item.verdict],
-                "lignes exploitables": item.rows,
-                "categorie": item.category,
-                "plateforme": item.nasa.get("platform", ""),
-                "periode": " a ".join(
+                "status": VERDICT_LABELS[item.verdict],
+                "usable rows": item.rows,
+                "category": item.category,
+                "platform": item.nasa.get("platform", ""),
+                "period": " to ".join(
                     x for x in [item.nasa.get("start", ""), item.nasa.get("end", "")] if x
                 ),
-                "titre NASA": item.nasa.get("title", ""),
-                "notre evaluation": item.assessment,
-                "csv": item.files["csv"],
-                "PDF": item.files["reports"],
+                "NASA's title": item.nasa.get("title", ""),
+                "what we found": item.assessment,
+                "csv files": item.files["csv"],
+                "reports": item.files["reports"],
             }
             for item in scan()
         ]

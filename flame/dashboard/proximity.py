@@ -52,9 +52,9 @@ TYPICAL_PERCENTILE = 75
 OUTSIDE_PERCENTILE = 100
 
 VERDICTS = {
-    "inside": "dans le domaine teste",
-    "extrapolation": "extrapolation",
-    "outside": "hors du domaine teste",
+    "inside": "Measured here",
+    "extrapolation": "Between tests",
+    "outside": "Never tested",
 }
 
 
@@ -81,23 +81,23 @@ class Proximity:
         if self.out_of_range:
             names = ", ".join(self.out_of_range)
             return (
-                f"Aucun essai NASA n'a explore ces valeurs de {names}. "
-                "La prediction est une extrapolation pure."
+                f"No NASA test ever went to these values of {names}. The "
+                "prediction is pure extrapolation."
             )
         if self.verdict == "inside":
             return (
-                f"{len(self.neighbours)} essais reels se trouvent aussi pres de "
-                "cette condition que les essais le sont typiquement entre eux."
+                f"{len(self.neighbours)} real tests sit as close to this "
+                "condition as the tests typically sit to one another."
             )
         if self.verdict == "extrapolation":
             return (
-                "Cette condition tombe dans un vide du plan d'experience : "
-                f"l'essai le plus proche est {self.distance / self.typical_distance:.1f} "
-                "fois plus loin que d'ordinaire."
+                "This condition falls in a gap in the test matrix: the nearest "
+                f"run is {self.distance / self.typical_distance:.1f} times "
+                "further away than usual."
             )
         return (
-            "Aucune campagne n'est passee par la. La prediction repose "
-            "entierement sur la forme du modele, pas sur des observations."
+            "No campaign ever went here. The prediction rests entirely on the "
+            "shape of the model, not on any observation."
         )
 
 

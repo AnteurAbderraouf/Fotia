@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Panache PSI-115</title>
+<title>PSI-115 Smoke Plume</title>
 <style>
   :root {
     --bg: #0b0d10;
@@ -54,37 +54,37 @@
 <body>
 <div id="app">
   <header>
-    <h1 id="title">PSI-115 — panache de fumee, microgravite</h1>
+    <h1 id="title">PSI-115 · smoke plume, microgravity</h1>
     <p class="caveat">
-      <strong>Le champ ne bouge pas.</strong> Le balayage fait varier le seuil de
-      decoupe de l'isosurface, la rotation deplace l'observateur. Chaque image est
-      une isosurface reelle du meme etat stationnaire : PSI-115 ne contient aucune
-      serie temporelle, donc rien ici n'est une combustion filmee.
-      <strong>Revolution licite</strong> parce que le cas en microgravite est
-      axisymetrique — sur Terre la gravite designe une direction et la symetrie
-      disparait. Simulation numerique, unites normalisees et non metriques.
+      <strong>The field does not move.</strong> Sweeping changes the cut-off of
+      the isosurface; rotating moves the viewer. Every frame is a real isosurface
+      of the same steady state. PSI-115 holds no time series at all, so nothing
+      here is filmed combustion.
+      <strong>Revolving it is legitimate</strong> because the microgravity case is
+      axisymmetric. On Earth, gravity picks out a direction and that symmetry is
+      gone. Numerical simulation, in normalised rather than metric units.
     </p>
   </header>
 
   <div id="stage">
     <div id="hud">
-      <div><b id="fps">—</b> <span>images/s</span></div>
-      <div><span>seuil</span> <b id="levelOut">—</b></div>
+      <div><b id="fps">—</b> <span>fps</span></div>
+      <div><span>cut-off</span> <b id="levelOut">—</b></div>
     </div>
   </div>
 
   <footer>
-    <button id="spin" aria-pressed="false">Rotation</button>
-    <button id="play" aria-pressed="false">Balayage</button>
-    <label>seuil
+    <button id="spin" aria-pressed="false">Rotate</button>
+    <button id="play" aria-pressed="false">Sweep</button>
+    <label>cut-off
       <input id="level" type="range" min="0" max="1" value="0" step="1">
       <span class="value" id="levelLabel">—</span>
     </label>
-    <label>opacite
+    <label>opacity
       <input id="opacity" type="range" min="10" max="100" value="92" step="1">
     </label>
-    <label><input id="showPlane" type="checkbox" checked> plan de coupe</label>
-    <span class="spacer">glisser pour tourner, molette pour zoomer</span>
+    <label><input id="showPlane" type="checkbox" checked> cutting plane</label>
+    <span class="spacer">drag to turn, scroll to zoom</span>
   </footer>
 </div>
 
@@ -283,7 +283,7 @@ function animate(now) {
 requestAnimationFrame(animate);
 
 document.getElementById('title').textContent =
-  'PSI-115 — panache de fumee, microgravite, bruleur ' + data.burner + ' cm';
+  'PSI-115 · smoke plume, microgravity, ' + data.burner + ' cm burner';
 </script>
 </body>
 </html>

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -36,22 +36,21 @@
 <body>
 <div id="app">
   <div id="panel">
-    <h3>Essai</h3>
+    <h3>Test</h3>
     <select id="fuel"></select>
     <select id="pick"></select>
-    <label class="chk"><input id="compare" type="checkbox"> comparer les carburants</label>
+    <label class="chk"><input id="compare" type="checkbox"> compare fuels</label>
     <div id="facts"></div>
     <div class="note">
-      <span class="warn">Le profil est une convention.</span> Trois dimensions
-      sont MESUREES : le diametre de buse, la largeur maximale et la longueur
-      au point de fumee. La silhouette entre elles ne l'est pas — aucune
-      colonne ne dit ou la flamme atteint sa largeur maximale le long de son
-      axe. La forme dessinee est celle, connue, d'une flamme de diffusion
-      laminaire.
+      <span class="warn">The outline is a convention.</span> Three dimensions
+      are MEASURED: the nozzle diameter, the widest point, and the length at
+      the smoke point. The silhouette between them is not. No column says
+      where along its axis the flame reaches its widest, so the curve drawn
+      here is the known shape of a laminar diffusion flame, not data.
     </div>
     <div class="note">
-      Ce qui se compare valablement ici, ce sont les TAILLES. Une flamme courte
-      signifie un carburant qui fume beaucoup.
+      What compares validly here are the SIZES. A short flame means a fuel
+      that smokes heavily.
     </div>
   </div>
   <div id="stage"><div id="foot"></div></div>
@@ -119,7 +118,7 @@ function fill() {
   list.forEach((t, i) => {
     const o = document.createElement('option');
     o.value = String(i);
-    o.textContent = `${t.length.toFixed(1)} mm · buse ${t.nozzle} mm`;
+    o.textContent = `${t.length.toFixed(1)} mm · nozzle ${t.nozzle} mm`;
     el('pick').appendChild(o);
   });
   return list;
@@ -151,8 +150,8 @@ function show() {
       return `<div class="row"><span>${f}</span><b>${median.length.toFixed(1)} mm</b></div>`;
     }).join('');
     el('foot').textContent =
-      'Essai median de chaque carburant. Le propylene fume nettement plus : '
-      + 'sa flamme lache bien plus court.';
+      'The median test of each fuel. Propylene smokes far more heavily: its '
+      + 'flame gives out much shorter.';
   } else {
     const t = list[Math.min(+el('pick').value || 0, list.length - 1)];
     if (!t) return;
@@ -160,15 +159,15 @@ function show() {
     group.add(flame(t, 0, COLOURS[t.fuel] ?? 0xf2a649));
     span = t.length;
     el('facts').innerHTML =
-      `<div class="row"><span>carburant</span><b>${t.fuel}</b></div>` +
+      `<div class="row"><span>fuel</span><b>${t.fuel}</b></div>` +
       `<div class="row"><span>fraction</span><b>${t.fraction}</b></div>` +
-      `<div class="row"><span>buse</span><b>${t.nozzle} mm</b></div>` +
-      `<div class="row"><span>largeur max</span><b>${t.width.toFixed(2)} mm</b></div>` +
-      `<div class="row"><span>longueur</span><b>${t.length.toFixed(1)} mm</b></div>` +
-      `<div class="row"><span>co-courant</span><b>${t.coflow.toFixed(1)} cm/s</b></div>`;
+      `<div class="row"><span>nozzle</span><b>${t.nozzle} mm</b></div>` +
+      `<div class="row"><span>widest</span><b>${t.width.toFixed(2)} mm</b></div>` +
+      `<div class="row"><span>length</span><b>${t.length.toFixed(1)} mm</b></div>` +
+      `<div class="row"><span>coflow</span><b>${t.coflow.toFixed(1)} cm/s</b></div>`;
     el('foot').textContent =
-      `Rapport longueur/largeur : ${(t.length / t.width).toFixed(1)}. `
-      + 'Plus la flamme est courte, plus le carburant produit de suie.';
+      `Length to width ratio: ${(t.length / t.width).toFixed(1)}. `
+      + 'The shorter the flame, the more soot the fuel makes.';
   }
 
   const reach = Math.max(span, 20) * 1.5;

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <style>
@@ -50,35 +50,35 @@
 <body>
 <div id="app">
   <div id="panel">
-    <h3>Essai</h3>
-    <div class="ctl"><label>Carburant</label><select id="fuel"></select></div>
-    <div class="ctl"><label>Essai <b id="idx"></b></label><input id="pick" type="range"></div>
+    <h3>Test</h3>
+    <div class="ctl"><label>Fuel</label><select id="fuel"></select></div>
+    <div class="ctl"><label>Test <b id="idx"></b></label><input id="pick" type="range"></div>
     <div class="legend">
-      <div><span class="dot" style="background:#3987e5"></span> gouttelette au depart</div>
-      <div><span class="dot" style="background:#d95926"></span> extinction de la flamme chaude</div>
-      <div><span class="dot" style="background:#9085e9"></span> extinction de la flamme froide</div>
+      <div><span class="dot" style="background:#3987e5"></span> droplet at the start</div>
+      <div><span class="dot" style="background:#d95926"></span> hot flame extinction</div>
+      <div><span class="dot" style="background:#9085e9"></span> cool flame extinction</div>
     </div>
     <div class="note" id="lawnote"></div>
     <div class="note">
-      Les trois diametres sont MESURES. Ils s'emboitent : la goutte brule sous
-      la flamme chaude, celle-ci lache, puis une flamme froide invisible prend
-      le relais jusqu'a son propre diametre d'extinction.
+      All three diameters are MEASURED. They nest inside one another: the
+      droplet burns under the hot flame, the hot flame gives out, then an
+      invisible cool flame takes over down to its own extinction diameter.
     </div>
   </div>
 
   <div id="stage">
     <div id="cards">
-      <div class="card"><div class="k">depart</div><div class="v" id="v0">—</div></div>
-      <div class="card"><div class="k">ext. chaude</div><div class="v" id="vh">—</div></div>
-      <div class="card"><div class="k">ext. froide</div><div class="v" id="vc">—</div></div>
-      <div class="card"><div class="k">pression</div><div class="v" id="vp">—</div></div>
+      <div class="card"><div class="k">start</div><div class="v" id="v0">—</div></div>
+      <div class="card"><div class="k">hot ext.</div><div class="v" id="vh">—</div></div>
+      <div class="card"><div class="k">cool ext.</div><div class="v" id="vc">—</div></div>
+      <div class="card"><div class="k">pressure</div><div class="v" id="vp">—</div></div>
     </div>
     <div id="verdict">—</div>
     <div id="foot">
-      <button id="play">Lecture</button>
+      <button id="play">Play</button>
       <input id="scrub" type="range" min="0" max="1000" value="0" style="flex:1">
       <span class="small">t = <b id="tNow">0.00</b> s · d = <b id="dNow">—</b> mm
-        · phase <b id="phase">—</b> · <b id="fps">—</b> img/s</span>
+        · phase <b id="phase">—</b> · <b id="fps">—</b> fps</span>
     </div>
   </div>
 </div>
@@ -138,26 +138,25 @@ function apply() {
   el('idx').textContent = `${+el('pick').value + 1} / ${list.length}`;
   el('v0').textContent = t.d0.toFixed(2);
   el('vh').textContent = t.dh.toFixed(2);
-  el('vc').textContent = t.dc > 0 ? t.dc.toFixed(2) : 'aucune';
+  el('vc').textContent = t.dc > 0 ? t.dc.toFixed(2) : 'none';
   el('vp').textContent = t.p.toFixed(2);
 
   const badge = el('verdict');
-  if (t.dc > 0) { badge.style.background = '#9085e9'; badge.textContent = 'Flamme froide observee'; }
-  else { badge.style.background = '#4d5a66'; badge.textContent = 'Aucune flamme froide'; }
+  if (t.dc > 0) { badge.style.background = '#9085e9'; badge.textContent = 'Cool flame observed'; }
+  else { badge.style.background = '#4d5a66'; badge.textContent = 'No cool flame'; }
 
   // L'animation n'est proposee que la ou la loi en d2 a ete verifiee.
   animatable = P.animatable.includes(t.fuel) && t.dh < t.d0 && t.kh > 0;
   el('play').disabled = !animatable;
   el('lawnote').innerHTML = animatable
-    ? 'Loi en d² verifiee sur ce carburant (correlation +0.889) : la '
-      + 'trajectoire est animable.'
-    : '<span class="warn">Animation indisponible.</span> Sur les melanges '
-      + 'dodecane/iso-dodecane la loi en d² ne tient pas (correlation +0.03 a '
-      + '+0.50) : les constituants s\\'evaporent a des rythmes differents, et '
-      + 'certaines gouttes GONFLENT avant de bruler. Les trois diametres '
-      + 'restent mesures et exacts ; seule la trajectoire entre eux serait '
-      + 'inventee.';
-  if (!animatable) { running = false; el('play').textContent = 'Lecture'; elapsed = 0; }
+    ? 'The d² law holds for this fuel (correlation +0.889), so the path '
+      + 'between the three diameters can be animated.'
+    : '<span class="warn">No animation here.</span> On the dodecane and '
+      + 'iso-dodecane blends the d² law does not hold (correlation +0.03 to '
+      + '+0.50): the components evaporate at different rates, and some '
+      + 'droplets SWELL before they burn. All three diameters stay measured '
+      + 'and exact; only the path between them would be invented.';
+  if (!animatable) { running = false; el('play').textContent = 'Play'; elapsed = 0; }
 
   const hotTime = t.kh > 0 ? Math.max((t.d0*t.d0 - t.dh*t.dh) / t.kh, 0.1) : 1;
   const coolTime = (t.dc > 0 && t.kc > 0) ? Math.max((t.dh*t.dh - t.dc*t.dc) / t.kc, 0.1) : 0;
@@ -171,7 +170,7 @@ function apply() {
 }));
 el('play').onclick = function () {
   if (!animatable) return;
-  running = !running; this.textContent = running ? 'Pause' : 'Lecture';
+  running = !running; this.textContent = running ? 'Pause' : 'Play';
 };
 el('scrub').addEventListener('input', () => {
   dragging = true;
@@ -196,18 +195,18 @@ function animate(now) {
   // Deux phases : la flamme chaude consume a k_hot jusqu'a son extinction,
   // puis la flamme froide prend le relais a k_cool, plus lente.
   let d, phase;
-  if (!animatable) { d = shown.d0; phase = 'statique'; }
+  if (!animatable) { d = shown.d0; phase = 'still'; }
   else if (elapsed <= shown.hot) {
     d = Math.sqrt(Math.max(shown.d0*shown.d0 - shown.kh*elapsed, shown.dh*shown.dh));
-    phase = 'chaude';
+    phase = 'hot';
   } else if (shown.cool > 0) {
     const u = elapsed - shown.hot;
     d = Math.sqrt(Math.max(shown.dh*shown.dh - shown.kc*u, shown.dc*shown.dc));
-    phase = 'froide';
-  } else { d = shown.dh; phase = 'eteinte'; }
+    phase = 'cool';
+  } else { d = shown.dh; phase = 'out'; }
 
   droplet.scale.setScalar(d/2);
-  droplet.material.color.setHex(phase === 'froide' ? 0x9085e9 : 0xf2a649);
+  droplet.material.color.setHex(phase === 'cool' ? 0x9085e9 : 0xf2a649);
   ghostStart.scale.setScalar(shown.d0/2);
   ghostHot.scale.setScalar(shown.dh/2);
   ghostCool.visible = shown.dc > 0.01;

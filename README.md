@@ -32,7 +32,12 @@ combustion_science/     24 NASA investigations, one folder each
 flame/
   common/               shared cleaning, paths, and a standard table audit
   loaders/              one loader per investigation — the cleaning IS the code
+  models/               one model per dataset, each chosen by measurement
+  dashboard/            the registry, the proximity index, the catalogue
+  retrieval/            hybrid search over the report PDFs
+  viz/                  the Three.js views and their templates
 
+app/main.py             the dashboard
 data/processed/         the cleaned tables (regenerable, see below)
 scripts/build_all.py    rebuilds every table from scratch
 ```
@@ -47,6 +52,43 @@ python scripts/build_all.py
 `combustion_science/` is read-only source of truth — nothing ever writes into
 it. `data/processed/` is fully disposable: delete it, run the script, and it
 comes back identical.
+
+## The dashboard
+
+```bash
+python -m streamlit run app/main.py
+```
+
+It is organised in three levels, from the quickest read to the most
+verifiable:
+
+| Level | What it holds |
+|---|---|
+| **01 What we found** | Four findings, computed from the tables rather than written into the page. No jargon, no PSI numbers. |
+| **02 Ask a question** | The seven modules grouped into six plain questions. You enter by what you want to know, not by combustion regime. |
+| **03 Check the work** | The full catalogue, the coverage maps, search over NASA's reports, and why each model was chosen. |
+
+Every prediction carries the same three-state badge, with the same wording
+everywhere: **Measured here**, **Between tests**, **Never tested**. The
+threshold behind it is not hand-picked. Each module measures how far its real
+tests sit from their own nearest neighbours, and that distribution defines
+what a normal neighbourhood is for that dataset.
+
+The interface is in English; the code and its comments are in French.
+
+## Checks
+
+```bash
+python scripts/check_app.py        # renders every level, question and tab
+python scripts/check_templates.py  # JavaScript syntax in the 3D views
+python scripts/check_language.py   # no French left in the interface
+```
+
+These exist because of bugs that shipped silently. A shell heredoc once
+doubled a backslash inside a template, which is a JavaScript syntax error, and
+a syntax error kills the whole module: the cool-flame view rendered nothing at
+all, and neither Python nor Streamlit said a word. `check_templates.py` needs
+Node, and skips cleanly when it is absent.
 
 ## The datasets, honestly
 

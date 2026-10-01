@@ -22,4 +22,12 @@ streamlit>=1.60      # le tableau de bord, app/main.py
 plotly>=7.0          # graphes interactifs et vues 3D fixes
 pillow>=11.0         # textures du rendu Three.js
 
+# --- Reconstruction du corpus de recherche : optionnel ---
+# `scripts/extract_pdf_text.py` l'importe tardivement, dans sa seule fonction
+# qui s'en sert. Le corpus produit, data/processed/reports_corpus.csv, EST
+# versionne : la recherche fonctionne donc sur une machine fraiche sans jamais
+# ouvrir un PDF. Cette ligne ne sert qu'a REFAIRE l'extraction, ce qui demande
+# en plus les dossiers reports/, exclus du depot.
+pypdf>=6.0           # extraction du texte des rapports NASA
+
 # Three.js est charge depuis un CDN dans la page generee, pas installe ici.

@@ -41,6 +41,16 @@ WATCHED = [
     ROOT / "flame" / "dashboard" / "registry.py",
 ]
 
+# Les chargeurs sont un cas a part. Leurs constantes de niveau module partent
+# dans les tables que le tableau de bord affiche, donc elles comptent ; mais
+# leur `main()` imprime un compte rendu en francais a l'intention de l'auteur,
+# et leurs exceptions s'adressent au developpeur. Ni l'un ni l'autre n'atteint
+# l'ecran. On ne regarde donc que le niveau module, et toute chaine qui part a
+# l'affichage doit y etre nommee.
+MODULE_LEVEL_ONLY = [
+    ROOT / "flame" / "loaders" / "psi115.py",
+]
+
 # Les gabarits de vue, ou tout le texte visible est du HTML.
 TEMPLATES = sorted((ROOT / "flame" / "viz" / "templates").glob("*.html"))
 
@@ -74,30 +84,57 @@ JS_COMMENT = re.compile(r"//[^\n]*|/\*.*?\*/", re.DOTALL)
 CSS_BLOCK = re.compile(r"<style>.*?</style>", re.DOTALL | re.IGNORECASE)
 
 
-def python_strings(path: Path) -> list[tuple[int, str]]:
-    """Les littéraux d'un module, docstrings exclues."""
+def python_strings(path: Path, module_level_only: bool = False) -> list[tuple[int, str]]:
+    """Les littéraux d'un module, docstrings exclues.
+
+    `module_level_only` ne regarde que les affectations de niveau module, en
+    sautant le corps des fonctions et des classes.
+    """
     tree = ast.parse(path.read_text(encoding="utf-8"))
+
+    if module_level_only:
+        roots = [
+            node
+            for node in tree.body
+            if not isinstance(
+                node, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)
+            )
+        ]
+    else:
+        roots = list(tree.body)
+
     docstrings = set()
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.Module, ast.ClassDef, ast.FunctionDef,
-                             ast.AsyncFunctionDef)):
-            first = node.body[0] if node.body else None
-            if (
-                isinstance(first, ast.Expr)
-                and isinstance(first.value, ast.Constant)
-                and isinstance(first.value.value, str)
-            ):
-                docstrings.add(id(first.value))
+    for root in roots:
+        for node in ast.walk(root):
+            if isinstance(node, (ast.ClassDef, ast.FunctionDef,
+                                 ast.AsyncFunctionDef)):
+                first = node.body[0] if node.body else None
+                if (
+                    isinstance(first, ast.Expr)
+                    and isinstance(first.value, ast.Constant)
+                    and isinstance(first.value.value, str)
+                ):
+                    docstrings.add(id(first.value))
+    # La docstring du module elle-meme n'est pas dans `roots` quand on filtre,
+    # mais elle y est sinon.
+    first = tree.body[0] if tree.body else None
+    if (
+        isinstance(first, ast.Expr)
+        and isinstance(first.value, ast.Constant)
+        and isinstance(first.value.value, str)
+    ):
+        docstrings.add(id(first.value))
 
     found = []
-    for node in ast.walk(tree):
-        if (
-            isinstance(node, ast.Constant)
-            and isinstance(node.value, str)
-            and id(node) not in docstrings
-            and len(node.value) > 8
-        ):
-            found.append((node.lineno, node.value))
+    for root in roots:
+        for node in ast.walk(root):
+            if (
+                isinstance(node, ast.Constant)
+                and isinstance(node.value, str)
+                and id(node) not in docstrings
+                and len(node.value) > 8
+            ):
+                found.append((node.lineno, node.value))
     return found
 
 
@@ -119,8 +156,10 @@ def template_text(path: Path) -> list[tuple[int, str]]:
 def main() -> int:
     problems = 0
 
-    for path in WATCHED:
-        for line, text in python_strings(path):
+    for path, module_only in [(p, False) for p in WATCHED] + [
+        (p, True) for p in MODULE_LEVEL_ONLY
+    ]:
+        for line, text in python_strings(path, module_level_only=module_only):
             match = FRENCH.search(text)
             if match:
                 problems += 1

@@ -79,18 +79,34 @@ class Progress:
         print("\n" if self.live else "")
 
 
-def archive_files() -> list[Path]:
-    """Les fichiers que git ignore, d'après git."""
-    result = subprocess.run(
-        ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
-        cwd=ROOT,
-        capture_output=True,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-    )
+def archive_files(required: bool = True) -> list[Path]:
+    """Les fichiers que git ignore, d'après git.
+
+    `required=False` renvoie une liste vide au lieu d'echouer quand git est
+    absent. La verification s'en sert : sur une machine neuve, git n'est pas
+    forcement installe au moment ou l'on controle la copie, et ce serait
+    absurde de perdre le controle des 502 fichiers pour un listage annexe.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "ls-files", "--others", "--ignored", "--exclude-standard"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+        )
+    except (OSError, FileNotFoundError):
+        if required:
+            raise SystemExit(
+                "git est introuvable. L'inventaire s'appuie sur "
+                "`git ls-files`, donc l'ecriture du manifeste demande git."
+            )
+        return []
     if result.returncode != 0:
-        raise SystemExit(f"git a echoue : {result.stderr.strip()}")
+        if required:
+            raise SystemExit(f"git a echoue : {result.stderr.strip()}")
+        return []
 
     found = []
     for line in result.stdout.splitlines():
@@ -190,8 +206,10 @@ def verify(quick: bool) -> int:
             corrupt.append(relative)
 
     progress.close()
-    present = {p.relative_to(ROOT).as_posix() for p in archive_files()}
-    extra = sorted(present - set(expected))
+    listed = archive_files(required=False)
+    extra = sorted(
+        {p.relative_to(ROOT).as_posix() for p in listed} - set(expected)
+    ) if listed else []
 
     for title, items in [
         ("MANQUANTS", missing),

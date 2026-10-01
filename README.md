@@ -90,6 +90,31 @@ a syntax error kills the whole module: the cool-flame view rendered nothing at
 all, and neither Python nor Streamlit said a word. `check_templates.py` needs
 Node, and skips cleanly when it is absent.
 
+## Moving to another machine
+
+The repo is 12 Mo and everything in it travels through git. A bare clone runs
+the whole dashboard and rebuilds all ten tables, so for most purposes cloning
+is the entire answer.
+
+The NASA archive is a different matter: 502 files and 5 050 Mo that git
+deliberately does not carry, listed with their sizes and SHA-256 sums in
+`archive_manifest.csv`, which **is** tracked. The data travels on a disk, the
+manifest travels through git, and they meet on the far side:
+
+```bash
+# on the old machine, after any change to the archive
+python scripts/archive_manifest.py --write
+
+# on the new machine, once the archive has been copied across
+python scripts/archive_manifest.py --verify
+```
+
+`--verify` names what is missing, what is the wrong size and what is corrupt.
+A 5 Go copy can truncate a zip without saying anything, and you would only
+find out weeks later when you tried to open it. `--quick` compares sizes
+alone, which is faster and, by construction, blind to a file that was
+corrupted without changing length.
+
 ## The datasets, honestly
 
 Ten investigations yielded usable tables. Row counts are what survived

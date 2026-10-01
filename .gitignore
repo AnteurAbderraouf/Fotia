@@ -35,8 +35,19 @@ combustion_science/**/fields/
 #
 # data/processed/ est suivi alors qu'il est régénérable. C'est volontaire :
 # un diff sur ces tables rend visible toute modification silencieuse d'un
-# loader. Deux bugs de ce type ont déjà été trouvés — une provenance écrasée
-# et une conversion d'unité muette — et aucun n'aurait levé d'erreur.
+# loader. Deux bugs de ce type ont déjà été trouvés, une provenance écrasée
+# et une conversion d'unité muette, et aucun n'aurait levé d'erreur.
+#
+#   archive_manifest.csv             88 Ko — l'inventaire de ce qui N'EST PAS
+#                                           versionné : 502 fichiers, leur
+#                                           taille et leur somme SHA-256.
+#
+# Ce dernier est suivi EXPRÈS, et le paradoxe est le point. Les données
+# voyagent par disque externe, le manifeste voyage par git, et les deux se
+# rejoignent sur la machine d'arrivée : `py scripts/archive_manifest.py
+# --verify` dit si les 5 Go sont arrivés entiers. Une copie de cette taille
+# peut tronquer un zip sans rien signaler, et ça ne se voit qu'au moment où
+# on essaie de l'ouvrir.
 # ---------------------------------------------------------------------------
 
 # Figures generees. Contrairement a data/processed/, elles ne sont pas

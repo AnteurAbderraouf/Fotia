@@ -44,6 +44,11 @@ WATCHED = [
     ROOT / "flame" / "dashboard" / "proximity.py",
     ROOT / "flame" / "dashboard" / "questions.py",
     ROOT / "flame" / "dashboard" / "registry.py",
+    # L'assistant : son panneau, et tout ce que le modele lit puis repete.
+    ROOT / "flame" / "dashboard" / "assistant_panel.py",
+    ROOT / "flame" / "assistant" / "tools.py",
+    ROOT / "flame" / "assistant" / "knowledge.py",
+    ROOT / "flame" / "assistant" / "gemini.py",
 ]
 
 # Les gabarits de vue, ou tout le texte visible est du HTML.

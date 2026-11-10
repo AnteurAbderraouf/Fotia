@@ -75,3 +75,15 @@ Thumbs.db
 *.tmp
 *.bak
 scratch/
+
+# ---------------------------------------------------------------------------
+# Dossiers de reference (PDF, videos) : restent sur le disque, hors git.
+#   nasa/     contexte vaisseaux et incidents (dossier du designer, ~100 Mo)
+#   nasawat/  bibliotheque d'articles scientifiques (~1,1 Go)
+# Les tableaux extraits de ces sources vivent dans data/context/ (versionnes).
+# ---------------------------------------------------------------------------
+/nasa/
+/nasawat/
+
+# Cle de l'API Gemini (assistant). Ne JAMAIS la versionner.
+.streamlit/secrets.toml

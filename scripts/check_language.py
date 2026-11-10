@@ -35,10 +35,20 @@ WATCHED = [
     ROOT / "app" / "main.py",
     ROOT / "flame" / "dashboard" / "catalogue.py",
     ROOT / "flame" / "dashboard" / "coverage.py",
+    ROOT / "flame" / "dashboard" / "console.py",
+    ROOT / "flame" / "dashboard" / "why.py",
+    ROOT / "flame" / "dashboard" / "presets.py",
+    ROOT / "flame" / "models" / "hybrid.py",
+    ROOT / "flame" / "viz" / "fotia_flame.py",
     ROOT / "flame" / "dashboard" / "findings.py",
     ROOT / "flame" / "dashboard" / "proximity.py",
     ROOT / "flame" / "dashboard" / "questions.py",
     ROOT / "flame" / "dashboard" / "registry.py",
+    # L'assistant : son panneau, et tout ce que le modele lit puis repete.
+    ROOT / "flame" / "dashboard" / "assistant_panel.py",
+    ROOT / "flame" / "assistant" / "tools.py",
+    ROOT / "flame" / "assistant" / "knowledge.py",
+    ROOT / "flame" / "assistant" / "gemini.py",
 ]
 
 # Les chargeurs sont un cas a part. Leurs constantes de niveau module partent
@@ -53,6 +63,9 @@ MODULE_LEVEL_ONLY = [
 
 # Les gabarits de vue, ou tout le texte visible est du HTML.
 TEMPLATES = sorted((ROOT / "flame" / "viz" / "templates").glob("*.html"))
+# La console : HTML, et un JS dont tout le texte visible est dans le code.
+CONSOLE = ROOT / "flame" / "viz" / "console"
+TEMPLATES += sorted(CONSOLE.glob("*.html")) + sorted(CONSOLE.glob("*.js"))
 
 # Mots-outils francais. Deux exclusions volontaires : « plus » et « mode »
 # sont des mots anglais courants, et les retenir noyait les vrais cas sous des

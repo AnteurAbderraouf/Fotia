@@ -1,0 +1,39 @@
+test,flight,pressure_bar,o2_pct,diluent,d0_mm,burn_time_s,k_initial_mm2_s,k_overall_mm2_s,k_final_mm2_s,usable,remark,source,page
+1,STS-83,1.00,35,He,3.93,14.13,1.81,1.26,1.13,yes,,NASA/TM-2003-212553 Table 1,17
+2,STS-83,1.00,35,He,2.87,7.40,1.45,1.22,1.11,yes,,NASA/TM-2003-212553 Table 1,17
+3,STS-83,1.00,35,He,1.91,3.07,1.47,1.35,1.00,yes,,NASA/TM-2003-212553 Table 1,17
+4,STS-94,1.00,32,He,3.87,,1.50,1.10,0.92,yes,burn time not measurable (drift out of view),NASA/TM-2003-212553 Table 1,17
+5,STS-94,1.00,32,He,2.92,,1.71,1.23,0.93,yes,burn time not measurable (drift out of view),NASA/TM-2003-212553 Table 1,17
+6,STS-94,1.00,32,He,2.72,7.70,1.55,1.19,1.03,yes,,NASA/TM-2003-212553 Table 1,17
+7,STS-83,1.00,30,He,3.87,9.87,1.25,1.00,0.76,yes,,NASA/TM-2003-212553 Table 1,17
+8,STS-83,1.00,30,He,2.94,9.47,1.11,1.02,0.99,yes,,NASA/TM-2003-212553 Table 1,17
+9,STS-94,1.00,30,He,1.82,3.37,1.16,1.15,1.06,yes,,NASA/TM-2003-212553 Table 1,17
+10,STS-94,1.00,30,He,1.81,3.30,1.30,1.22,1.07,yes,,NASA/TM-2003-212553 Table 1,17
+11,STS-94,1.00,30,He,1.78,3.30,1.32,1.18,1.08,yes,,NASA/TM-2003-212553 Table 1,17
+12,STS-83,1.00,25,He,4.01,8.80,,0.99,,yes,,NASA/TM-2003-212553 Table 1,17
+13,STS-83,1.00,25,He,3.15,4.40,,0.94,,yes,,NASA/TM-2003-212553 Table 1,17
+14,STS-83,1.00,25,He,2.75,4.80,,0.93,,yes,,NASA/TM-2003-212553 Table 1,17
+15,STS-94,1.00,25,He,1.68,2.83,,0.96,,yes,,NASA/TM-2003-212553 Table 1,17
+16,STS-94,1.00,25,He,1.61,2.53,,0.95,,yes,,NASA/TM-2003-212553 Table 1,17
+17,STS-94,1.00,25,He,,,,,,no,no droplet view: no burning-rate constant,NASA/TM-2003-212553 Table 1,17
+18,STS-94,1.00,25,He,1.12,,,1.10,,no,droplet struck the igniter wire (drift 28 mm/s): rate raised by convection,NASA/TM-2003-212553 Table 1,17
+19,STS-94,1.00,20,He,3.71,1.30,,1.00,,yes,early radiative extinction,NASA/TM-2003-212553 Table 1,17
+20,STS-94,1.00,20,He,2.77,1.27,,1.15,,yes,early radiative extinction,NASA/TM-2003-212553 Table 1,17
+21,STS-94,1.00,20,He,1.36,0.90,,1.03,,yes,,NASA/TM-2003-212553 Table 1,17
+22,STS-94,1.00,20,He,0.89,0.43,,0.85,,yes,,NASA/TM-2003-212553 Table 1,17
+23,STS-94,0.50,40,He,3.26,11.30,1.52,1.16,0.98,yes,,NASA/TM-2003-212553 Table 1,17
+24,STS-94,0.50,35,He,4.00,,,1.01,,yes,burn time not measurable (drift out of view),NASA/TM-2003-212553 Table 1,17
+25,STS-94,0.50,35,He,3.60,,,0.78,,yes,burn time not measurable (drift out of view),NASA/TM-2003-212553 Table 1,17
+26,STS-94,0.50,35,He,2.09,4.67,,0.98,,yes,,NASA/TM-2003-212553 Table 1,17
+27,STS-94,0.50,35,He,,,,,,no,no droplet view: no burning-rate constant,NASA/TM-2003-212553 Table 1,17
+28,STS-94,0.50,30,He,3.08,6.57,,0.91,,yes,,NASA/TM-2003-212553 Table 1,17
+29,STS-94,0.50,30,He,2.68,,,0.50,,yes,burn time not measurable (drift out of view),NASA/TM-2003-212553 Table 1,17
+30,STS-94,0.50,30,He,2.26,5.43,,0.93,,yes,,NASA/TM-2003-212553 Table 1,18
+31,STS-94,0.50,30,He,2.23,4.90,,0.92,,yes,,NASA/TM-2003-212553 Table 1,18
+32,STS-94,0.50,25,He,2.86,2.83,,0.85,,yes,,NASA/TM-2003-212553 Table 1,18
+33,STS-94,0.25,50,He,,2.87,,,,no,no droplet view: no burning-rate constant (initial diameter ~1.5 mm from camcorder),NASA/TM-2003-212553 Table 1,18
+34,STS-94,0.25,35,He,2.61,6.57,,0.90,,yes,,NASA/TM-2003-212553 Table 1,18
+35,STS-94,1.00,21,N2,3.10,18,0.57,0.56,0.44,no,tethered droplet (fibre changes the rate),NASA/TM-2003-212553 Table 1,18
+36,STS-94,1.00,21,N2,3.09,15.30,0.47,0.48,,yes,cabin air,NASA/TM-2003-212553 Table 1,18
+37,STS-94,1.00,21,N2,2.59,11.50,0.89,0.68,0.51,no,tethered droplet (fibre changes the rate),NASA/TM-2003-212553 Table 1,18
+38,STS-94,1.00,21,N2,1.68,6.03,0.68,0.66,0.53,yes,cabin air,NASA/TM-2003-212553 Table 1,18

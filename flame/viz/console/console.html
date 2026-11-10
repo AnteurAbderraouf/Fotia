@@ -1,0 +1,76 @@
+<div class="fx" id="fx">
+  <header class="top">
+    <div class="brand">
+      <div class="mark">Fotia</div>
+      <div class="sub">Flame in Freefall &middot; NASA Space Apps Challenge 2026</div>
+    </div>
+    <p class="lead">Pick a place, change the air, and watch one drop of fuel burn.
+      Every answer says how close it is to a real NASA test.</p>
+    <ul class="legend" id="legend"></ul>
+  </header>
+
+  <section class="where">
+    <h2 class="step"><span class="n">01</span><span class="t">Where</span></h2>
+    <div class="places" id="places"></div>
+    <div class="cite" id="placeCite"></div>
+  </section>
+
+  <section class="main">
+    <div class="panel air">
+      <h2 class="step"><span class="n">02</span><span class="t">The air</span></h2>
+      <div id="controls"></div>
+    </div>
+
+    <div class="panel stage">
+      <h2 class="step"><span class="n">03</span><span class="t">The flame</span></h2>
+      <div class="view" id="view">
+        <canvas id="cv"></canvas>
+        <div class="hatch" id="hatch"></div>
+        <div class="badge" id="badge"></div>
+        <div class="clock" id="clock"></div>
+        <div class="beyond" id="beyond"></div>
+        <div class="state" id="state"></div>
+        <div class="err" id="err"></div>
+      </div>
+      <div class="vbar">
+        <div class="vtools" id="vtools">
+          <button class="tg play" data-act="play" aria-pressed="false" title="Start or pause the burn (Space)">Ignite</button>
+          <button class="tg" data-tg="orbit" aria-pressed="true" title="Drag the flame to turn it around">Rotate</button>
+          <button class="tg" data-tg="air" aria-pressed="false" title="Your cursor blows air toward the flame: closer and faster blows harder">Air from cursor</button>
+          <button class="tg" data-act="reset" title="Back to the starting view">Reset view</button>
+        </div>
+        <div class="vhint" id="vhint"></div>
+      </div>
+      <div class="curvebox">
+        <svg class="curve" id="curve" viewBox="0 0 600 100" preserveAspectRatio="none"></svg>
+        <div class="curvelab"><span>Droplet diameter over time</span><span id="curveEnd"></span></div>
+      </div>
+      <div class="fine">Droplet and flame sizes follow the d&sup2; law at the computed rate.
+        Flame colour, flicker, shape and the cursor&rsquo;s air flow are illustrative.</div>
+    </div>
+
+    <div class="panel answer">
+      <h2 class="step"><span class="n">04</span><span class="t">Prediction</span></h2>
+      <div id="answers"></div>
+    </div>
+  </section>
+
+  <section class="why">
+    <h2 class="step"><span class="n">05</span><span class="t">Why it matters</span></h2>
+    <div class="why-grid">
+      <div class="panel map">
+        <div class="h">Where spacecraft atmospheres sit</div>
+        <svg id="map" viewBox="0 0 380 280"></svg>
+        <div class="unplaced" id="unplaced"></div>
+        <div class="std" id="std"></div>
+      </div>
+      <div class="panel ctx">
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="whytext" id="whyText"></div>
+        <div class="cards" id="cards"></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot" id="foot"></footer>
+</div>

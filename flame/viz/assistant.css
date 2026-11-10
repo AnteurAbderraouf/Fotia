@@ -1,0 +1,100 @@
+/* Ask Fotia : fenetre de conversation flottante, aux couleurs de la console
+   (memes valeurs que les jetons de console.css). Fixee en bas a droite :
+   elle suit le visiteur pendant le defilement. */
+
+/* Ferme : un seul bouton */
+.st-key-ask_fab {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  width: auto !important;
+}
+.st-key-ask_fab button {
+  background: #1c68e3;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  padding: 10px 16px;
+  font: 500 14px 'Public Sans', sans-serif;
+  box-shadow: 0 8px 24px hsl(0 0% 0% / .35);
+}
+.st-key-ask_fab button:hover { background: #1a5fd0; color: #fff; }
+
+/* Ouvert : la fenetre */
+.st-key-ask_float {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000;
+  width: min(420px, calc(100vw - 32px)) !important;
+  gap: 8px;
+  padding: 12px;
+  background: #434346;
+  border: 1px solid hsl(0 0% 100% / .16);
+  border-radius: 12px;
+  box-shadow: 0 16px 48px hsl(0 0% 0% / .45);
+}
+.st-key-ask_bar { justify-content: space-between; }
+.st-key-ask_bar > div { width: auto !important; flex: 0 0 auto !important; }
+.ask-title { font: 500 14px 'Public Sans', sans-serif; color: hsl(0 0% 93%); padding-left: 4px; }
+.st-key-ask_close button {
+  background: transparent;
+  border: 0;
+  color: hsl(240 2% 77%);
+  min-height: 32px;
+  padding: 4px 8px;
+}
+.st-key-ask_close button:hover { color: hsl(0 0% 93%); background: hsl(0 0% 100% / .06); }
+
+.st-key-ask_msgs {
+  background: #2f2f32;
+  border: 1px solid hsl(0 0% 100% / .09) !important;
+  border-radius: 8px;
+}
+.ask-sub {
+  font: 400 13px 'Public Sans', sans-serif;
+  color: hsl(240 2% 77%);
+  line-height: 1.5;
+  margin: 0;
+}
+.ask-meta { font: 400 11px 'DM Mono', monospace; color: hsl(240 2% 65%); margin-top: 4px; }
+
+[data-testid="stChatMessage"] {
+  background: #3a3a3d;
+  border: 1px solid hsl(0 0% 100% / .09);
+  border-radius: 8px;
+  padding: 8px 12px;
+  gap: 8px;
+}
+/* Avatars neutres : la couleur reste au contenu, pas au cadre */
+[data-testid="stChatMessageAvatarCustom"],
+[data-testid="stChatMessageAvatarUser"],
+[data-testid="stChatMessageAvatarAssistant"],
+[data-testid="stChatMessage"] > div:first-child:has(> span[data-testid="stIconMaterial"]) {
+  background: transparent !important;
+  color: hsl(240 2% 65%) !important;
+}
+[data-testid="stChatMessage"] p,
+[data-testid="stChatMessage"] li {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.st-key-ask_suggest { gap: 6px; }
+.st-key-ask_suggest button {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  background: transparent;
+  border: 1px solid hsl(0 0% 100% / .16);
+  border-radius: 8px;
+  color: hsl(240 2% 77%);
+  font: 400 13px 'Public Sans', sans-serif;
+}
+.st-key-ask_suggest button:hover { border-color: #1c68e3; color: hsl(0 0% 93%); }
+
+@media (max-width: 480px) {
+  .st-key-ask_float, .st-key-ask_fab { right: 16px; bottom: 16px; }
+}

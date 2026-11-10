@@ -230,7 +230,11 @@ class Flame3D {
     const R0 = sc ? sc.flameR0 : 10;
     const st = sc ? sc.stretch : 1;
     const target = [0, R0 * (st - 1) * 0.45, 0];
-    const dist = R0 * (1 + (st - 1) * 1.35) * 3.3 * this.zoom;
+    // Recul : la demi-hauteur visible vaut dist x tan(19 deg) = 0,344 dist. Le
+    // front bleu et son halo montent a ~1,25 R0 ; a 4,6 R0 on voit +-1,6 R0,
+    // toute la flamme tient dans la vue avec une marge (a 3,3 R0 elle etait
+    // coupee en haut et en bas).
+    const dist = R0 * (1 + (st - 1) * 1.35) * 4.6 * this.zoom;
     const cp = Math.cos(this.pitch);
     const ro = [target[0] + dist * cp * Math.sin(this.yaw), target[1] + dist * Math.sin(this.pitch),
       target[2] + dist * cp * Math.cos(this.yaw)];

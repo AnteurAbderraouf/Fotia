@@ -18,6 +18,10 @@ GROUND = NASA_ROOT / "ground_investigation"
 # Sorties générées — jetables et reconstructibles
 PROCESSED = PROJECT_ROOT / "data" / "processed"
 
+# Contexte releve a la main (incidents, atmospheres, gravite, litterature).
+# Contrairement a PROCESSED, ce n'est PAS reconstructible : ne jamais le vider.
+CONTEXT = PROJECT_ROOT / "data" / "context"
+
 
 def psi_dir(psi_id: str) -> Path:
     """Dossier d'une investigation, sans avoir à se rappeler sa catégorie NASA.
@@ -39,3 +43,8 @@ def processed_path(name: str) -> Path:
     """Chemin d'un fichier généré, en créant le dossier au besoin."""
     PROCESSED.mkdir(parents=True, exist_ok=True)
     return PROCESSED / name
+
+
+def context_path(name: str) -> Path:
+    """Chemin d'un fichier de contexte, sans jamais le creer."""
+    return CONTEXT / name

@@ -78,6 +78,28 @@ def check(path: Path, node: str) -> list[str]:
     return problems
 
 
+CONSOLE = TEMPLATES.parent / "console"
+
+
+def check_module(path: Path, node: str) -> list[str]:
+    """Un fichier JS de module ES entier (la console), passe a `node --check`."""
+    with tempfile.NamedTemporaryFile(
+        "w", suffix=".mjs", delete=False, encoding="utf-8"
+    ) as handle:
+        handle.write(path.read_text(encoding="utf-8"))
+        temporary = Path(handle.name)
+    try:
+        result = subprocess.run(
+            [node, "--check", str(temporary)],
+            capture_output=True, text=True, encoding="utf-8", errors="replace",
+        )
+    finally:
+        temporary.unlink(missing_ok=True)
+    if result.returncode == 0:
+        return []
+    return [" | ".join((result.stderr or result.stdout).strip().splitlines()[:4])]
+
+
 def main() -> int:
     node = shutil.which("node")
     if node is None:
@@ -85,8 +107,9 @@ def main() -> int:
         return 0
 
     failures = 0
-    for path in sorted(TEMPLATES.glob("*.html")):
-        problems = check(path, node)
+    paths = sorted(TEMPLATES.glob("*.html")) + sorted(CONSOLE.glob("*.js"))
+    for path in paths:
+        problems = check_module(path, node) if path.suffix == ".js" else check(path, node)
         if problems:
             failures += 1
             print(f"ECHEC  {path.name}")

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!--
+  Vue de la flamme Fotia. Le calcul est fait cote Python (flame/models/hybrid.py) ;
+  cette page ne fait qu'animer le resultat recu dans PAYLOAD.
+
+  Ce qui est mesure ou calcule : le retrecissement de la gouttelette (loi en d2,
+  K et diametre final venus du moteur), l'instant ou la flamme s'eteint.
+  Ce qui est illustratif : la taille et la forme de l'enveloppe de flamme, et
+  son allongement avec la gravite. La page l'ecrit en bas de l'image.
+-->
+<style>
+  :root { --bg:#0e1117; --fg:#e8eaed; --dim:#8a93a0; }
+  html,body { margin:0; background:var(--bg); color:var(--fg);
+              font:13px/1.4 system-ui,-apple-system,"Segoe UI",sans-serif; }
+  #wrap { position:relative; width:100%; height:430px; }
+  canvas { width:100%; height:100%; display:block; }
+  #badge { position:absolute; top:12px; left:12px; padding:5px 11px; border-radius:4px;
+           font-weight:700; font-size:12px; letter-spacing:.04em; text-transform:uppercase;
+           color:#0d0d0d; }
+  #clock { position:absolute; top:14px; right:14px; font-variant-numeric:tabular-nums;
+           color:var(--dim); }
+  #state { position:absolute; bottom:34px; left:0; right:0; text-align:center; font-size:14px; }
+  #foot  { position:absolute; bottom:10px; left:0; right:0; text-align:center;
+           font-size:11px; color:var(--dim); }
+  #extra { position:absolute; top:44px; left:12px; right:12px; padding:6px 10px;
+           border:1px dashed #d9534f; color:#f0a5a2; border-radius:4px; font-size:12px;
+           display:none; background:rgba(217,83,79,.08); }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+  <div id="badge"></div>
+  <div id="clock"></div>
+  <div id="extra"></div>
+  <div id="state"></div>
+  <div id="foot">Droplet shrinks by the d&sup2; law at the computed burning rate.
+    Flame envelope size and shape are illustrative.</div>
+</div>
+<script>
+const P = /*__PAYLOAD__*/;
+
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const HOLD = 1.8;              // secondes d'arret sur l'etat final
+const SPEED = Math.max(1, P.duration / 8);  // une combustion tient en ~8 s d'ecran
+
+const badge = document.getElementById('badge');
+badge.textContent = P.badge.label;
+badge.style.background = P.badge.colour;
+
+if (P.extrapolated.length) {
+  const box = document.getElementById('extra');
+  box.style.display = 'block';
+  box.textContent = 'Extrapolated zone: outside the tested ' + P.extrapolated.join(', ') + '.';
+}
+
+function size() {
+  const r = window.devicePixelRatio || 1;
+  canvas.width = canvas.clientWidth * r;
+  canvas.height = canvas.clientHeight * r;
+  ctx.setTransform(r, 0, 0, r, 0, 0);
+}
+window.addEventListener('resize', size);
+size();
+
+// Hachures rouges sur tout le fond quand on sort des donnees : la zone
+// extrapolee se voit sans lire un mot.
+function hatch(w, h) {
+  ctx.save();
+  ctx.strokeStyle = 'rgba(217,83,79,0.10)';
+  ctx.lineWidth = 6;
+  for (let x = -h; x < w; x += 22) {
+    ctx.beginPath(); ctx.moveTo(x, h); ctx.lineTo(x + h, 0); ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function flame(cx, cy, radius, stretch, alpha) {
+  // Enveloppe : sphere en microgravite, goutte etiree vers le haut avec la gravite.
+  ctx.save();
+  ctx.translate(cx, cy - radius * (stretch - 1) * 0.6);
+  ctx.scale(1, stretch);
+  const g = ctx.createRadialGradient(0, 0, radius * 0.25, 0, 0, radius);
+  g.addColorStop(0.0, 'rgba(90,140,255,' + (0.10 * alpha) + ')');
+  g.addColorStop(0.55, 'rgba(255,150,40,' + (0.55 * alpha) + ')');
+  g.addColorStop(0.8, 'rgba(255,90,20,' + (0.35 * alpha) + ')');
+  g.addColorStop(1.0, 'rgba(255,60,0,0)');
+  ctx.fillStyle = g;
+  ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
+let start = performance.now();
+function frame(now) {
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  ctx.clearRect(0, 0, w, h);
+  if (P.extrapolated.length) hatch(w, h);
+
+  const elapsed = (now - start) / 1000 * SPEED;
+  const total = P.duration + HOLD * SPEED;
+  if (elapsed > total) start = now;
+  const t = Math.min(elapsed, P.duration);
+
+  const d2 = Math.max(P.d0 * P.d0 - P.k * t, P.dfinal * P.dfinal);
+  const d = Math.sqrt(d2);
+  const scale = Math.min(w, h) * 0.075 / P.d0;   // px par mm
+  const cx = w / 2, cy = h * 0.56;
+  const burning = t < P.duration;
+
+  if (burning) {
+    const flicker = 1 + 0.03 * Math.sin(now / 90);
+    flame(cx, cy, d * scale * P.envelope * flicker, P.stretch, 1);
+  }
+  // La gouttelette, a l'echelle.
+  ctx.fillStyle = '#7fb3ff';
+  ctx.beginPath(); ctx.arc(cx, cy, Math.max(d * scale / 2, 0.5), 0, Math.PI * 2); ctx.fill();
+
+  document.getElementById('clock').textContent =
+    t.toFixed(1) + ' s / ' + P.duration.toFixed(1) + ' s    d = ' + d.toFixed(2) + ' mm';
+  document.getElementById('state').textContent = burning
+    ? 'Burning'
+    : (P.dfinal > 0 ? 'Flame out at ' + P.dfinal.toFixed(2) + ' mm' : 'Droplet fully burned');
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

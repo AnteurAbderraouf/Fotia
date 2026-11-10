@@ -22,4 +22,7 @@ streamlit>=1.60      # le tableau de bord, app/main.py
 plotly>=7.0          # graphes interactifs et vues 3D fixes
 pillow>=11.0         # textures du rendu Three.js
 
+# --- Phase « recherche » : en place ---
+pypdf>=6.0           # texte des rapports, scripts/extract_pdf_text.py
+
 # Three.js est charge depuis un CDN dans la page generee, pas installe ici.

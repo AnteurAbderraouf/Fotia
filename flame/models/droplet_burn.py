@@ -58,15 +58,39 @@ FOLDS = 5
 TARGET = "burning_rate_mm2_s"
 
 
-def prepare() -> tuple[pd.DataFrame, pd.Series]:
+def rate_frame(with_msl1: bool = True) -> pd.DataFrame:
     """Tous les essais dont la constante de combustion est mesurée.
 
     Contrairement au diamètre d'extinction, K se mesure aussi sur les
     combustions complètes : c'est la vitesse à laquelle la goutte se consume,
     qu'elle finisse par s'éteindre ou par s'épuiser.
+
+    MSL-1 AJOUTE (2026-11-09). Les 32 gouttes d'heptane de MSL-1 / DCE
+    (flame/loaders/msl1.py) rejoignent les 204 essais FLEX. Mesure avant de
+    les ajouter, en validation croisee a 5 plis :
+
+        modele FLEX seul -> essais MSL-1     erreur 0.121 mm²/s, biais +0.021
+        FLEX seul, sur FLEX                  erreur 0.050 mm²/s
+        FLEX + MSL-1, sur FLEX               erreur 0.053 mm²/s
+        FLEX + MSL-1, sur MSL-1              erreur 0.121 mm²/s
+
+    Un modele qui n'a jamais vu MSL-1 le predit sans biais : les deux
+    campagnes s'accordent, on peut les reunir. Le cout sur FLEX (+0.003) est
+    dans le bruit. Le gain est la couverture : pression jusqu'a 0,25 bar et
+    oxygene jusqu'a 40 % pour l'heptane, en helium.
     """
     df = load()
+    df = df.assign(investigation=df.get("investigation", "PSI-69"))
+    if with_msl1:
+        from flame.loaders.msl1 import load as load_msl1
+
+        df = pd.concat([df, load_msl1()], ignore_index=True)
     usable = df[df[TARGET].notna() & df[FEATURES].notna().all(axis=1)]
+    return usable.reset_index(drop=True)
+
+
+def prepare(with_msl1: bool = True) -> tuple[pd.DataFrame, pd.Series]:
+    usable = rate_frame(with_msl1)
     X = pd.get_dummies(usable[FEATURES], drop_first=True).astype(float)
     return X, usable[TARGET]
 

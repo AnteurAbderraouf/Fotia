@@ -626,10 +626,10 @@ function renderAnswers(S) {
     sub = "No NASA extinction test for this fuel";
   } else {
     goes = pred.extinguishes && pred.dext != null
-      ? `Yes, at ${pred.dext.toFixed(2)} mm`
-      : "No, it burns to the end";
+      ? `Extinguishes at ${pred.dext.toFixed(2)} mm`
+      : "Burns to completion";
     const edge = pred.ext_basis === "edge" ? " (value at the edge of the tests)" : "";
-    sub = `${pct(pred.p_ext)} chance the flame goes out early${edge}`;
+    sub = `${pct(pred.p_ext)} extinction probability${edge}`;
     meter = `<div class="meter"><i style="width:${(100 * pred.p_ext).toFixed(1)}%"></i></div>`;
   }
   let cmp = "";
@@ -641,22 +641,22 @@ function renderAnswers(S) {
     : "";
   S.el.answers.innerHTML = `
     <div class="q">
-      <div class="qk">Does the flame go out early?</div>
+      <div class="qk">Flame extinction</div>
       <div class="qa">${esc(goes)}</div>
       <div class="qs">${esc(sub)}</div>${meter}
     </div>
     <div class="q">
-      <div class="qk">How fast does it burn?</div>
+      <div class="qk">Burning rate constant, K</div>
       <div class="qa num">${pred.k.toFixed(2)}<small>mm²/s</small></div>
       <div class="qs">${esc(cmp)}${esc(pred.k_basis)}</div>
     </div>
     <div class="q">
-      <div class="qk">How long does it last?</div>
+      <div class="qk">Burn time</div>
       <div class="qa num">${pred.duration.toFixed(1)}<small>s</small></div>
-      <div class="qs">${esc(`A ${c.d0_mm.toFixed(2)} mm droplet, ${pred.extinguishes ? "until the flame goes out" : "until it is gone"}`)}</div>
+      <div class="qs">${esc(`A ${c.d0_mm.toFixed(2)} mm droplet, ${pred.extinguishes ? "until extinction" : "until fully burned"}`)}</div>
     </div>
     <div class="q sure">
-      <div class="qk">How sure is this?</div>
+      <div class="qk">Confidence</div>
       ${pill(pred.verdict, pred.badge)}
       <div class="qs">${esc(pred.badge_text)}</div>
       ${notes}

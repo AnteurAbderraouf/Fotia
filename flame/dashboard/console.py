@@ -6,7 +6,7 @@ page entiere (lieux, commandes, flamme, reponse, contexte) est un seul
 composant `st.components.v2`, dessine par flame/viz/console/. Une seule
 feuille de style, une seule palette, un seul ordre de lecture :
 
-    01 Where   02 The air   03 The flame   04 The answer   05 Why it matters
+    01 Where   02 The air   03 The flame   04 Prediction   05 Why it matters
 
 QUI CALCULE QUOI. Le navigateur ne calcule rien de physique. Il envoie les
 reglages (`setStateValue("conditions", ...)`), Python appelle le moteur

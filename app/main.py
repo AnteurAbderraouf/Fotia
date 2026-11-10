@@ -7,7 +7,11 @@ catalogue, onglets de verification) a ete retiree le 2026-11-09 : elle
 empilait trop de panneaux sans fil conducteur. Tout l'ecran est maintenant la
 console de flame/dashboard/console.py, lue dans un ordre fixe :
 
-    01 Where   02 The air   03 The flame   04 The answer   05 Why it matters
+    01 Where   02 The air   03 The flame   04 Prediction   05 Why it matters
+
+et, par-dessus, Ask Fotia : l'assistant (flame/assistant/), en fenetre
+flottante en bas a droite, qui repond avec Gemini en tirant chaque chiffre
+du moteur.
 
 Ce fichier ne fait que preparer la page : titre, polices du Horizon Design
 System de la NASA (Public Sans, DM Mono), fond charbon, chrome Streamlit
@@ -26,6 +30,7 @@ import streamlit as st
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from flame.dashboard.assistant_panel import render as render_assistant  # noqa: E402
 from flame.dashboard.console import render  # noqa: E402
 
 st.set_page_config(page_title="Fotia", layout="wide", page_icon="\U0001F525",
@@ -48,3 +53,4 @@ st.html(
 )
 
 render()
+render_assistant()

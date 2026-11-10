@@ -73,3 +73,6 @@ scratch/
 # ---------------------------------------------------------------------------
 /nasa/
 /nasawat/
+
+# Cle de l'API Gemini (assistant). Ne JAMAIS la versionner.
+.streamlit/secrets.toml

@@ -90,6 +90,43 @@ a syntax error kills the whole module: the cool-flame view rendered nothing at
 all, and neither Python nor Streamlit said a word. `check_templates.py` needs
 Node, and skips cleanly when it is absent.
 
+## Moving to another machine
+
+```bash
+git clone https://github.com/AnteurAbderraouf/Fotia.git
+cd Fotia
+python scripts/setup.py
+```
+
+`setup.py` checks the Python version, installs the dependencies, verifies the
+NASA archive if it is present, rebuilds the ten tables, validates the 3D
+templates and the interface language, renders every state of the dashboard,
+and then prints the command to launch it. It also states plainly what it
+cannot do, which is conjure the archive.
+
+The repo is 12 Mo and everything in it travels through git. A bare clone runs
+the whole dashboard and rebuilds all ten tables, so for most purposes cloning
+is the entire answer.
+
+The NASA archive is a different matter: 502 files and 5 050 Mo that git
+deliberately does not carry, listed with their sizes and SHA-256 sums in
+`archive_manifest.csv`, which **is** tracked. The data travels on a disk, the
+manifest travels through git, and they meet on the far side:
+
+```bash
+# on the old machine, after any change to the archive
+python scripts/archive_manifest.py --write
+
+# on the new machine, once the archive has been copied across
+python scripts/archive_manifest.py --verify
+```
+
+`--verify` names what is missing, what is the wrong size and what is corrupt.
+A 5 Go copy can truncate a zip without saying anything, and you would only
+find out weeks later when you tried to open it. `--quick` compares sizes
+alone, which is faster and, by construction, blind to a file that was
+corrupted without changing length.
+
 ## The datasets, honestly
 
 Ten investigations yielded usable tables. Row counts are what survived
@@ -170,10 +207,11 @@ modification, et les descriptions NASA sont reproduites verbatim.
 
 Deux jeux de données contiennent des mesures publiées par ailleurs dans des
 articles à comité de lecture. NASA les diffuse sur psi.nasa.gov, et les
-mesures elles-mêmes sont des faits, non des œuvres protégeables — mais les
-travaux méritent d'être cités :
+mesures elles-mêmes sont des faits, non des œuvres protégeables. Les
+travaux méritent néanmoins d'être cités :
 
-**PSI-117** — les fichiers sont les données derrière les figures de
+**PSI-117**, les fichiers sont les données derrière les figures de :
+
 - Reuter et al., *Proceedings of the Combustion Institute* 37 (2019),
   [10.1016/j.proci.2018.05.151](https://doi.org/10.1016/j.proci.2018.05.151)
 - *Proceedings of the Combustion Institute* 37 (2019),
@@ -183,7 +221,8 @@ travaux méritent d'être cités :
 - *Microgravity Science and Technology* (2024),
   [10.1007/s12217-024-10115-x](https://doi.org/10.1007/s12217-024-10115-x)
 
-**PSI-142** — brûleur à contre-courant de Princeton
+**PSI-142**, brûleur à contre-courant de Princeton :
+
 - C.B. Reuter et al., *Combustion and Flame* 179 (2017) 23–32
 - C.B. Reuter et al., *Proc. Combustion Institute* 37 (2019) 1851
 - O.R. Yehia et al., *Combustion and Flame* 195 (2018) 63–74

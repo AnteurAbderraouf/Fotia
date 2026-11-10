@@ -74,6 +74,14 @@ FIELDS_DIR = psi_dir("PSI-115") / "fields"
 NOT_A_GRID = {"manifest.csv", "nodeDiameters.csv", "mesh_axes.csv"}
 MESH_CSV = psi_dir("PSI-115") / "mesh_axes.csv"
 
+# La table deja reduite, qui est versionnee alors que `fields/` ne l'est pas.
+# Elle sert de repli, voir `load`.
+SUMMARY = processed_path("psi115_field_summary.csv")
+
+# Suffixe du nom de cas. Nomme ici, et pas en ligne dans `load`, pour que le
+# controle de langue le voie : il part dans la colonne `case` de la table.
+NO_THERMOPHORESIS = " / no thermophoresis"
+
 # Les libelles partent dans le tableau de bord, donc en anglais comme le reste
 # de ce qui s'affiche. Les commentaires et la documentation restent francais.
 VARIABLE_LABELS = {
@@ -177,8 +185,43 @@ def _summarise(values: np.ndarray, axis_y: np.ndarray | None) -> dict:
     return result
 
 
+def _grids_present() -> bool:
+    """Les 42 grilles brutes sont-elles sur ce disque ?"""
+    if not FIELDS_DIR.is_dir():
+        return False
+    return any(p.name not in NOT_A_GRID for p in FIELDS_DIR.glob("*.csv"))
+
+
 def load() -> pd.DataFrame:
-    """Une ligne par grille : le cas simulé, la variable, et ses scalaires."""
+    """Une ligne par grille : le cas simulé, la variable, et ses scalaires.
+
+    REPLI SUR LA TABLE VERSIONNÉE QUAND `fields/` EST ABSENT.
+
+    Les 42 grilles pèsent 130 Mo et sont exclues du dépôt, à juste titre : git
+    conserve un historique de code, pas des données. Mais cette fonction
+    alimente le troisième constat de la page d'accueil, si bien qu'un clone
+    propre du dépôt plantait avant d'afficher quoi que ce soit.
+
+    La table réduite, elle, EST versionnée. Elle contient exactement ce que
+    cette fonction produit, à la précision d'écriture du CSV près, ce qui a
+    été vérifié colonne par colonne. On la relit donc quand les grilles
+    manquent, plutôt que de refuser de démarrer.
+
+    Ce n'est pas une dégradation silencieuse : la table est le résultat, les
+    grilles n'en sont que la source. Ce qui est perdu, c'est la possibilité de
+    la RECALCULER, donc de modifier `_summarise`. Pour cela il faut les
+    grilles, régénérables depuis les zips NASA par `scripts/convert_dat.py`
+    puis `scripts/clean_dat_csv.py`.
+    """
+    if not _grids_present():
+        if not SUMMARY.exists():
+            raise FileNotFoundError(
+                f"ni {FIELDS_DIR.name}/ ni {SUMMARY.name} : rien a lire. "
+                "Les grilles se regenerent depuis les zips NASA avec "
+                "`py scripts/convert_dat.py` puis `py scripts/clean_dat_csv.py`."
+            )
+        return pd.read_csv(SUMMARY)
+
     try:
         _, axis_y = load_mesh()
     except FileNotFoundError:
@@ -212,7 +255,7 @@ def load() -> pd.DataFrame:
         df["burner_size_cm"].astype(str)
         + "cm / "
         + df["gravity"]
-        + np.where(df["thermophoresis"], "", " / sans thermophorese")
+        + np.where(df["thermophoresis"], "", NO_THERMOPHORESIS)
     )
     # source=None : la provenance ligne a ligne porte deja 1g ou microgravite,
     # qui est ici la variable comparee, pas une constante.

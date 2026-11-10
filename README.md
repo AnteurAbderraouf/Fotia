@@ -1,12 +1,36 @@
-# Flame in Freefall
+# Fotia
 
-Turning NASA's scattered microgravity combustion research into tables you can
-actually model on.
+**Fotia predicts how a droplet of fuel burns in a spacecraft's air, and tells
+you how close each answer is to a real NASA test.**
 
 **NASA Space Apps Challenge 2026** — *Flame in Freefall: AI-Powered Fire Safety
 Insights from Microgravity Combustion Data.*
 
+Pick a real spacecraft atmosphere (the ISS, the Shuttle before a spacewalk,
+Orion, Soyuz…) or set your own oxygen, pressure, gravity, fuel and diluent.
+Fotia answers four questions: does the flame go out, how fast does the
+droplet burn, how long does it last, and how much should you trust that
+answer. The flame is drawn in 3D at the computed rate, and an assistant
+answers questions about the dashboard and the science, citing Fotia's own
+engine and sources.
+
+```bash
+pip install -r requirements.txt
+python -m streamlit run app/main.py
+```
+
 ---
+
+## What we built
+
+| Layer | What it does |
+|---|---|
+| **Data** | 24 NASA investigations collected from [psi.nasa.gov](https://psi.nasa.gov), ten cleaned into model-ready tables, plus heptane droplets burned on Spacelab in 1997 (MSL-1) and cited tables of spacecraft atmospheres, fires and published results |
+| **Models** | Classical machine learning chosen by measurement, at a sample size of hundreds: ridge regression for the burning rate, logistic regression for extinction |
+| **Physics** | The d² law for the droplet's life; Spalding's quasi-steady droplet theory to extend the burning rate beyond the tested range, never the extinction |
+| **Confidence** | Every answer carries one of three badges, computed from the distance to the nearest real NASA test |
+| **Console** | A Streamlit dashboard built as one custom component: real atmospheres, sliders that show the tested range, a WebGL flame, the prediction, and why it matters |
+| **Assistant** | *Ask Fotia*, a Gemini-powered chat that can only answer from Fotia's engine and cited sources |
 
 ## The problem this repo solves
 
@@ -20,6 +44,95 @@ were measurements.
 That fragmentation *is* the challenge. So the catalogue here is not preparation
 for the real work — it is half the deliverable.
 
+The other half is a question a spacecraft designer actually asks: *if a fuel
+droplet catches fire in this cabin, what happens?* Answering it honestly means
+saying where NASA has measured it, and where it has not.
+
+## The dashboard
+
+The page reads top to bottom, in five numbered steps.
+
+| Step | What it shows |
+|---|---|
+| **01 Where** | Seven real atmospheres, each with its pressure, oxygen and gravity, a cited source and a quote: ISS cabin air, the ISS airlock before a spacewalk, the Shuttle before a spacewalk, Orion's lunar design atmosphere, Orion at full pressure, Soyuz at the rich end of its range, and NASA's proposed exploration atmosphere. *Your own mix* frees every control. |
+| **02 The air** | Oxygen, pressure, gravity, fuel (methanol, heptane, n-decane), diluent (nitrogen, CO₂, helium) and droplet size. Under each slider, a green band marks the range NASA tested for that fuel; beyond it, a hatched gap and the words *Beyond the tests*. |
+| **03 The flame** | A WebGL2 raymarched droplet and flame, shrinking at the computed rate. Press Space or *Ignite* to burn it; drag to rotate, Ctrl + wheel to zoom, *Air from cursor* to blow on it. Below, the diameter curve over time. Sizes are computed; colour, flicker and the air flow are illustrative. |
+| **04 Prediction** | **Flame extinction** (burns to completion, or extinguishes at a given diameter, with its probability), **burning rate constant K** in mm²/s with its ratio to ISS cabin air, **burn time**, and **confidence**. |
+| **05 Why it matters** | A map of real spacecraft atmospheres (pressure against oxygen) with NASA-STD-3001 crew limits and your setting on it; then tabs of fires and published results that match your setting, each with a quote and a link. |
+
+### The confidence badge
+
+Every prediction carries one of three badges, with the same wording
+everywhere:
+
+- **Measured here**: a NASA test was run close to this setting.
+- **Between tests**: each value was tested, but not this combination.
+- **Never tested**: no NASA test this far out; read the numbers as a trend.
+
+The threshold is not hand-picked. Fotia measures how far each real test sits
+from its own nearest neighbour, and that distribution defines what a normal
+neighbourhood is for the dataset. It matters: on PSI-69, the 14 oxygen levels
+and 14 CO₂ levels open 196 combinations, and only 31 were ever tested. Two
+values tested separately do not make a tested combination.
+
+### How a prediction is made
+
+1. **Inside the tested range**, the learned models answer directly:
+   - **Burning rate K**: ridge regression on 236 burns with a measured rate,
+     204 FLEX droplets on the ISS (PSI-69) and 32 heptane droplets from MSL-1.
+     Cross-validated R² 0.64, typical error 0.05 mm²/s.
+   - **Extinction**: logistic regression with balanced class weights, on the
+     FLEX burns only. 87% of them went out, so a model that always says
+     "extinguishes" is 87% accurate and useless; ours reaches a balanced
+     accuracy of 0.75 and a ROC AUC of 0.83, and finds 78% of the rare burns
+     that went to completion.
+   - **Extinction diameter**: ridge regression, R² 0.75.
+2. **The droplet's life** follows the d² law, d² = d₀² − K·t, so the burn time
+   is d₀²/K. Checked against 158 measured burns: correlation 0.995, median
+   error 6%.
+3. **Beyond the tested range**, K is the learned value at the edge of the range
+   multiplied by the physics ratio ln(1 + B) from quasi-steady droplet theory
+   (Spalding). Checked against FLEX, that theory underestimates the oxygen
+   effect by about 20–25%, and the engine says so on screen. Pressure has no
+   first-order effect in it, so beyond the tested pressure K stays at the edge
+   value.
+4. **Extinction is never extrapolated.** Beyond the tests, the edge value is
+   shown and named as such.
+5. **n-decane** has no NASA droplet test here: it is computed from heptane, its
+   nearest tested alkane, and labelled that way.
+6. **Gravity**: every droplet test is in microgravity. Above it, the numbers
+   stay the microgravity ones and only the drawn shape changes.
+
+### Ask Fotia, the assistant
+
+A chat window that follows you down the page. It runs on Google's Gemini
+(free tier), but the model is not trusted with numbers:
+
+- **Function calling.** Gemini cannot compute a K, a probability or a badge
+  itself: it calls Fotia's engine through five tools (`get_current_setting`,
+  `predict`, `list_places`, `tested_ranges`, `search_sources`) and quotes what
+  comes back.
+- **A restrictive system prompt** ([flame/assistant/knowledge.py](flame/assistant/knowledge.py))
+  limits it to Fotia, microgravity flames, spacecraft fire safety and the
+  NASA data behind the project. It refuses everything else, including
+  visitors who claim to be the developer. It also carries a guide to every
+  part of the dashboard, so it can tell a visitor which control to use.
+- **Grounded facts.** The places and tested ranges it knows are read from the
+  engine at startup, not copied by hand.
+- **Limits.** 25 questions per visit; lightweight models first, with a
+  fallback when one is overloaded. Without a key the dashboard still works and
+  the chat says it is offline.
+
+This is not fine-tuning: the model is used unchanged, steered by its
+instructions and grounded in Fotia's own engine.
+
+To enable it, put a free key from [Google AI Studio](https://aistudio.google.com/apikey)
+in `.streamlit/secrets.toml`, which git ignores:
+
+```toml
+GEMINI_API_KEY = "your-key"
+```
+
 ## What is in here
 
 ```
@@ -32,15 +145,34 @@ combustion_science/     24 NASA investigations, one folder each
 flame/
   common/               shared cleaning, paths, and a standard table audit
   loaders/              one loader per investigation — the cleaning IS the code
-  models/               one model per dataset, each chosen by measurement
-  dashboard/            the registry, the proximity index, the catalogue
-  retrieval/            hybrid search over the report PDFs
-  viz/                  the Three.js views and their templates
+  models/               one model per dataset, each chosen by measurement;
+                        hybrid.py is the flame engine behind the console
+  dashboard/            the console, its places, the proximity badge, coverage
+  assistant/            Ask Fotia: tools, system prompt, Gemini client
+  retrieval/            TF-IDF + LSA search over the NASA reports
+  viz/console/          the console page: HTML, CSS, JS and the WebGL flame
 
 app/main.py             the dashboard
+data/context/           atmospheres, fires, fuels and published results, cited
 data/processed/         the cleaned tables (regenerable, see below)
 scripts/build_all.py    rebuilds every table from scratch
 ```
+
+## Built with
+
+- **Python**: pandas and NumPy for the data, scikit-learn for the models,
+  Streamlit for the app, `google-genai` for the assistant.
+- **JavaScript, HTML, CSS**: the console, as one `st.components.v2` component.
+- **WebGL2 and GLSL**: the raymarched 3D flame, drawn on the graphics card.
+
+The interface is in English; the code and its comments are in French.
+
+## Put it online
+
+The app runs on [Streamlit Community Cloud](https://share.streamlit.io) for
+free: point it at this repository, branch `main`, file `app/main.py`, and paste
+`GEMINI_API_KEY = "..."` in the app's **Secrets**. A fresh clone runs the whole
+dashboard, so nothing else is needed.
 
 ## Rebuild everything
 
@@ -53,35 +185,12 @@ python scripts/build_all.py
 it. `data/processed/` is fully disposable: delete it, run the script, and it
 comes back identical.
 
-## The dashboard
-
-```bash
-python -m streamlit run app/main.py
-```
-
-It is organised in three levels, from the quickest read to the most
-verifiable:
-
-| Level | What it holds |
-|---|---|
-| **01 What we found** | Four findings, computed from the tables rather than written into the page. No jargon, no PSI numbers. |
-| **02 Ask a question** | The seven modules grouped into six plain questions. You enter by what you want to know, not by combustion regime. |
-| **03 Check the work** | The full catalogue, the coverage maps, search over NASA's reports, and why each model was chosen. |
-
-Every prediction carries the same three-state badge, with the same wording
-everywhere: **Measured here**, **Between tests**, **Never tested**. The
-threshold behind it is not hand-picked. Each module measures how far its real
-tests sit from their own nearest neighbours, and that distribution defines
-what a normal neighbourhood is for that dataset.
-
-The interface is in English; the code and its comments are in French.
-
 ## Checks
 
 ```bash
-python scripts/check_app.py        # renders every level, question and tab
+python scripts/check_app.py        # renders every place, fuel, diluent and edge case
 python scripts/check_templates.py  # JavaScript syntax in the 3D views
-python scripts/check_language.py   # no French left in the interface
+python scripts/check_language.py   # no French left in the interface or the assistant
 ```
 
 These exist because of bugs that shipped silently. A shell heredoc once
@@ -185,7 +294,7 @@ would score beautifully and mean nothing.
 The NASA archive itself: the unflattened `raw/` trees, the original download
 archives, the PDF reports, and PSI-115's CFD grids — 4.8 GB in total. Git keeps
 version history, it is not a backup tool, and GitHub rejects files above
-100 MB. Everything tracked here comes to under 8 MB.
+100 MB. Everything tracked here comes to about 12 MB.
 
 All of it is public and re-downloadable from
 [psi.nasa.gov](https://psi.nasa.gov); `layout.json` and `scripts/unflatten.py`
@@ -233,6 +342,10 @@ dans ce dépôt. Rien ici ne constitue une approbation par NASA.
 
 ## Status
 
-Data collection and cleaning are complete. Baseline models and the dashboard
-are next. `handoff-2026-09-22.md` carries the full working record, including
-eight claims an earlier pass got wrong that inspecting the data disproved.
+Data collection, cleaning, the models, the console and the assistant are in
+place and checked. Known limits are stated in the app itself: the colour of the
+flame is illustrative, the quotes in `data/context/` are not all verified
+against their originals yet, and no droplet test exists outside microgravity.
+
+`handoff-2026-09-22.md` carries the full working record, including eight claims
+an earlier pass got wrong that inspecting the data disproved.

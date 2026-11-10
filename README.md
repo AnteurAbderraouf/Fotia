@@ -1,5 +1,9 @@
 # Fotia
 
+**Try it live: [nasafotia.streamlit.app](https://nasafotia.streamlit.app)**
+
+![The Fotia dashboard: places, air controls, the 3D flame, the prediction and why it matters](docs/dashboard.png)
+
 **Fotia predicts how a droplet of fuel burns in a spacecraft's air, and tells
 you how close each answer is to a real NASA test.**
 

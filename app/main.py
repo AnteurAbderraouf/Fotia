@@ -46,9 +46,9 @@ st.html(
     """
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Public%20Sans:wght@400;500;600&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Public%20Sans:wght@400;500;600&family=Saira:ital,wght@1,500;1,600&display=swap">
     <style>
-      .stApp, [data-testid="stAppViewContainer"] { background: #2f2f32; }
+      .stApp, [data-testid="stAppViewContainer"] { background: #222225; }
       [data-testid="stHeader"], [data-testid="stToolbar"],
       [data-testid="stDecoration"], footer { display: none !important; }
       .block-container { padding: 24px 32px 16px !important; max-width: 1680px; }

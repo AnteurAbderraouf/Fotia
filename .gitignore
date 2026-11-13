@@ -87,3 +87,7 @@ scratch/
 
 # Cle de l'API Gemini (assistant). Ne JAMAIS la versionner.
 .streamlit/secrets.toml
+
+# Brief et captures de la presentation : documents de travail, hors depot.
+docs/pitch-brief.md
+docs/pitch-screens/

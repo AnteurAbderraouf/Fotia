@@ -110,8 +110,8 @@ def _logo() -> str:
     """Le logo de l'en-tete, en data URI.
 
     Le composant n'a pas d'adresse a lui ou servir un fichier : l'image voyage
-    dans le HTML. logo.png est derive de logo/fotialogo.png (rogne, 88 px de
-    haut pour un affichage a 44 px sur ecran dense, ~20 Ko).
+    dans le HTML. logo.png est derive de logo/fotialogo.png (rogne, 112 px de
+    haut pour un affichage a 56 px sur ecran dense).
     """
     data = base64.b64encode((ASSETS / "logo.png").read_bytes()).decode("ascii")
     return f"data:image/png;base64,{data}"

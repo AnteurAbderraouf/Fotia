@@ -18,8 +18,8 @@
   --orange: hsl(23 83% 53%);
   --green: hsl(145 67% 57%);
   --c90: hsl(240 8% 10%);
-  --c80: hsl(240 4% 19%);
-  --c70: hsl(240 2% 27%);
+  --c80: hsl(240 4% 14%);
+  --c70: hsl(240 2% 21%);
   --c60: hsl(240 2% 35%);
   --c50: hsl(240 1% 47%);
   --c40: hsl(240 2% 59%);
@@ -29,8 +29,8 @@
      plus sombres. La fenetre de flamme reste noire. */
   --bg: var(--c80);
   --surface: var(--c70);
-  --sunken: hsl(240 3% 22%);
-  --raised: hsl(240 2% 33%);
+  --sunken: hsl(240 3% 17%);
+  --raised: hsl(240 2% 27%);
   --line: hsl(0 0% 100% / .09);
   --line-strong: hsl(0 0% 100% / .16);
 
@@ -49,6 +49,8 @@
 
   --f-ui: "Public Sans", system-ui, sans-serif;
   --f-mono: "DM Mono", ui-monospace, monospace;
+  /* Celle du logo : titres, noms des lieux et commandes, resultats */
+  --f-display: "Saira", "Public Sans", system-ui, sans-serif;
   --r-sm: 6px;
   --r: 8px;
   --r-lg: 12px;
@@ -90,7 +92,7 @@
   border-bottom: 1px solid var(--line);
 }
 .mark { margin: 0; line-height: 0; }
-.mark img { display: block; height: 44px; width: auto; }
+.mark img { display: block; height: 56px; width: auto; }
 .sub { margin-top: 8px; font: 12px var(--f-mono); color: var(--text-3); }
 .lead { margin: 0; max-width: 560px; font-size: 16px; line-height: 24px; color: var(--text-2); }
 .legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
@@ -103,10 +105,10 @@
   align-items: baseline;
   gap: 8px;
   margin: 0 0 12px;
-  font: 500 14px var(--f-ui);
+  font: italic 600 16px var(--f-display);
   color: var(--text);
 }
-.step .n { font: 400 12px var(--f-mono); color: var(--text-3); }
+.step .n { font: normal 400 12px var(--f-mono); color: var(--text-3); }
 
 .panel {
   background: var(--surface);
@@ -150,9 +152,9 @@
   min-width: 0;
   transition: border-color .15s var(--ease), background-color .15s var(--ease);
 }
-.place:hover { border-color: var(--line-strong); background: hsl(240 2% 29%); }
+.place:hover { border-color: var(--line-strong); background: hsl(240 2% 24%); }
 .place:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 2px; }
-.place .nm { display: block; font: 500 14px/20px var(--f-ui); color: var(--text); }
+.place .nm { display: block; font: italic 600 15px/20px var(--f-display); color: var(--text); }
 .place .sp { display: block; margin-top: 4px; font: 12px var(--f-mono); color: var(--text-3);
              white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .place.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
@@ -168,7 +170,7 @@
 /* --- 02 Commandes ------------------------------------------------------- */
 .ctl { margin-bottom: 20px; }
 .ctl .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.ctl .lbl { font: 500 14px var(--f-ui); color: var(--text); }
+.ctl .lbl { font: italic 600 15px var(--f-display); color: var(--text); }
 .ctl output { font-size: 13px; color: var(--text); }
 .ctl output small { font-size: 12px; color: var(--text-3); margin-left: 8px; }
 .ctl .hint { margin-top: 4px; font: 12px var(--f-mono); color: var(--text-3); }
@@ -311,20 +313,20 @@
 .q:first-of-type { padding-top: 0; }
 .q:last-child { border-bottom: 0; }
 .qk { font: 400 13px var(--f-ui); color: var(--text-3); }
-.qa { margin-top: 4px; font: 500 20px/28px var(--f-ui); color: var(--text); }
-.qa.num { font: 400 28px/32px var(--f-mono); }
-.qa small { font: 13px var(--f-mono); color: var(--text-3); margin-left: 4px; }
+.qa { margin-top: 4px; font: italic 600 22px/28px var(--f-display); color: var(--text); }
+.qa.num { font: italic 600 32px/36px var(--f-display); font-variant-numeric: tabular-nums; }
+.qa small { font: normal 13px var(--f-mono); color: var(--text-3); margin-left: 4px; }
 .qs { margin-top: 4px; font-size: 13px; color: var(--text-2); }
 .meter { margin-top: 8px; height: 4px; border-radius: 2px; background: var(--sunken); overflow: hidden; }
 .meter i { display: block; height: 100%; background: var(--text-2); }
-.sure .verdict { margin-top: 8px; font-size: 15px; }
+.sure .verdict { margin-top: 8px; font: italic 600 17px var(--f-display); }
 .notes { margin: 8px 0 0; padding-left: 16px; font-size: 12px; color: var(--text-2); }
 .notes li { margin-bottom: 4px; }
 .msg { font-size: 14px; color: var(--text); }
 
 /* --- 05 Contexte ------------------------------------------------------------ */
 .why-grid { display: grid; grid-template-columns: 400px minmax(0, 1fr); gap: 16px; align-items: start; }
-.map .h { font: 500 14px var(--f-ui); color: var(--text); margin-bottom: 8px; }
+.map .h { font: italic 600 15px var(--f-display); color: var(--text); margin-bottom: 8px; }
 .map svg { width: 100%; height: auto; display: block; }
 .map .grid line { stroke: var(--line); stroke-width: 1; }
 .map .axis text, .map .lab { font: 10px var(--f-mono); fill: var(--text-3); }
@@ -352,14 +354,14 @@
 
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); margin: -4px 0 16px; }
 .tabs button {
-  all: unset; cursor: pointer; padding: 8px 12px; font: 400 14px var(--f-ui); color: var(--text-3);
+  all: unset; cursor: pointer; padding: 8px 12px; font: italic 500 15px var(--f-display); color: var(--text-3);
   border-bottom: 2px solid transparent; margin-bottom: -1px;
   transition: color .15s var(--ease), border-color .15s var(--ease);
 }
 .tabs button:hover { color: var(--text); }
 .tabs button:focus-visible { outline: 2px solid var(--accent-ink); }
-.tabs button.on { color: var(--text); font-weight: 500; border-bottom-color: var(--text); }
-.tabs .ct { margin-left: 8px; font: 11px var(--f-mono); color: var(--text-3); }
+.tabs button.on { color: var(--text); font-weight: 600; border-bottom-color: var(--text); }
+.tabs .ct { margin-left: 8px; font: normal 11px var(--f-mono); color: var(--text-3); }
 .whytext p { margin: 0 0 16px; color: var(--text); max-width: 760px; }
 .cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .card {

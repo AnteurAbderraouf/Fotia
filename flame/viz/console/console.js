@@ -797,7 +797,7 @@ function renderFoot(S) {
   S.el.foot.innerHTML = `
     <p>Extinction: learned from ${S.data.tests} NASA FLEX droplet tests flown on the ISS (PSI-69). Burning rate: the same FLEX tests plus ${S.data.msl1_tests} heptane droplets burned on Spacelab MSL-1 in 1997 (${link("https://ntrs.nasa.gov/citations/20040000941", "NASA/TM-2003-212553")}). Beyond all of them, quasi-steady droplet combustion theory.</p>
     <p>Context: fires, spacecraft atmospheres and papers collected by hand from NASA and published sources. Quotes are shown verbatim and are not yet verified against the originals.</p>
-    <p>Colours and typefaces: NASA Horizon Design System.</p>`;
+    <p>Colours and body typefaces: NASA Horizon Design System. Headings in Saira, after the Fotia logo.</p>`;
 }
 
 // --- Point d'entree -------------------------------------------------------------

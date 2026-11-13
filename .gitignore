@@ -31,7 +31,7 @@ combustion_science/**/fields/
 #   combustion_science/**/info.md            — descriptions NASA verbatim
 #   combustion_science/**/layout.json        — plans de dépliage des zips
 #   data/processed/                   0,5 Mo — tables nettoyées
-#   flame/ scripts/ handoff*.md
+#   flame/ scripts/
 #
 # data/processed/ est suivi alors qu'il est régénérable. C'est volontaire :
 # un diff sur ces tables rend visible toute modification silencieuse d'un
@@ -91,3 +91,6 @@ scratch/
 # Brief et captures de la presentation : documents de travail, hors depot.
 docs/pitch-brief.md
 docs/pitch-screens/
+
+# Notes de passation entre sessions : documents de travail, hors depot.
+handoff*.md

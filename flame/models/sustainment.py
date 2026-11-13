@@ -182,7 +182,7 @@ def main() -> None:
     print("7. POURQUOI L'ARBRE GAGNE ICI, ALORS QU'IL PERDAIT SUR PSI-69")
     print("-" * 74)
     print(
-        "\n  Le §9 du handoff posait une regle generale : a ce nombre de lignes,"
+        "\n  Le plan initial posait une regle generale : a ce nombre de lignes,"
         "\n  preferer une regression logistique ou un arbre peu profond, un"
         "\n  ensemble memorisera le bruit. Cette regle vaut pour PSI-69. Elle ne"
         "\n  vaut PAS ici, et la mesure le dit :\n"

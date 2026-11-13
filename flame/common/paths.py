@@ -27,7 +27,7 @@ def psi_dir(psi_id: str) -> Path:
     """Dossier d'une investigation, sans avoir à se rappeler sa catégorie NASA.
 
     PSI-117 par exemple est rangé sous ground_investigation alors que NASA le
-    décrit comme une investigation en vol (cf. handoff §6) — cette fonction
+    décrit comme une investigation en vol — cette fonction
     évite d'avoir à s'en souvenir à chaque appel.
     """
     for parent in (MICROGRAVITY, GROUND):

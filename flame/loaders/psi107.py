@@ -9,8 +9,8 @@ Source (lecture seule) :
     combustion_science/microgravity_investigation/PSI-107/csv/
     SmokePointReview-0g-3.xlsx, feuille « Smoke Point Datasheet »
 
-CORRECTION AU HANDOFF, vérifiée le 2026-09-22.
-Le handoff décrivait « sheet Smoke Point Datasheet (~115 rows) ». Le compte est
+CORRECTION AU PLAN INITIAL, vérifiée le 2026-09-22.
+Le plan initial décrivait « sheet Smoke Point Datasheet (~115 rows) ». Le compte est
 juste mais trompeur : la feuille n'est pas un tableau, c'est QUATRE tableaux
 empilés verticalement, issus de TROIS PLATEFORMES DE MICROGRAVITÉ DIFFÉRENTES,
 sans qu'aucun en-tête ne l'annonce. Les empiler sans distinction reviendrait à

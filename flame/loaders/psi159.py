@@ -12,7 +12,7 @@ Sources (lecture seule) :
                                     1015 lignes, le reste est du vide Excel)
 
 DEUX CONFIGURATIONS, PAS UN SEUL JEU DE DONNÉES.
-Le handoff annonçait « 179 + 154 = 333 » comme si les deux fichiers avaient le
+Le plan initial annonçait « 179 + 154 = 333 » comme si les deux fichiers avaient le
 même schéma. Ils ne l'ont pas, et la différence est physique, pas cosmétique :
 
     flamme normale  : du carburant est injecté dans une ambiance oxydante.
@@ -32,7 +32,7 @@ une colonne `flame_type` et garde les colonnes propres à chaque configuration,
 vides pour l'autre. On peut donc modéliser les deux ensemble sur les features
 communes, ou chaque configuration séparément — mais jamais par accident.
 
-CORRECTION au handoff sur le nombre de lignes. L'étiquette n'existe pas
+CORRECTION au plan initial sur le nombre de lignes. L'étiquette n'existe pas
 partout : 61 essais portent « - » au lieu de SE ou FT (46 en normal,
 15 en inverse). Le total modélisable est de 272 essais, pas 333.
 

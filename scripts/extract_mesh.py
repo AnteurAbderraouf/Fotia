@@ -2,7 +2,7 @@
 
     python scripts/extract_mesh.py
 
-Répare le cas limite laissé ouvert au §5 du handoff. Les fichiers
+Répare le cas limite laissé ouvert dans le plan initial. Les fichiers
 `*_sGrid_grid3d.dat` étaient notés « FAILED » dans le manifeste parce que
 pandas y voyait des lignes de longueurs incompatibles. Le format est en fait
 très simple :

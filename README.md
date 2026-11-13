@@ -354,6 +354,3 @@ Data collection, cleaning, the models, the console and the assistant are in
 place and checked. Known limits are stated in the app itself: the colour of the
 flame is illustrative, the quotes in `data/context/` are not all verified
 against their originals yet, and no droplet test exists outside microgravity.
-
-`handoff-2026-09-22.md` carries the full working record, including eight claims
-an earlier pass got wrong that inspecting the data disproved.

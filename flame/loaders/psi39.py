@@ -14,8 +14,8 @@ Le classeur a six feuilles, trois sont utiles et se joignent en 1:1 sur
     DATA          mesures de combustion + état d'avancement de l'analyse
     Igniter       énergie et durée d'allumage
 
-CORRECTION IMPORTANTE au handoff, vérifiée sur les données le 2026-09-22.
-Le handoff annonçait « 120 des 227 ont un diamètre d'extinction de flamme
+CORRECTION IMPORTANTE au plan initial, vérifiée sur les données le 2026-09-22.
+Le plan initial annonçait « 120 des 227 ont un diamètre d'extinction de flamme
 froide, 107 non, étiquette à peu près équilibrée ». C'est faux, et l'erreur
 aurait produit un modèle qui apprend la mauvaise chose.
 
@@ -33,7 +33,7 @@ aurait produit un modèle qui apprend la mauvaise chose.
     présent, sur les seuls essais analysés. Soit 124 oui / 22 non sur 146
     lignes, c'est-à-dire 85/15 — nettement déséquilibrée, pas équilibrée.
 
-Autre écart au handoff, celui-ci en notre faveur : il signalait la colonne
+Autre écart au plan initial, celui-ci en notre faveur : il signalait la colonne
 Pressure comme du texte incohérent (« .5 atm » contre « 0.5 atm »). C'est vrai
 dans Master Sheet, mais DATA porte une colonne « Pressure (atm) » déjà
 numérique, et les deux concordent sur les 227 lignes sans une seule exception.

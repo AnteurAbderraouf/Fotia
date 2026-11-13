@@ -13,8 +13,8 @@ ne disparait pas : il passe en source, a un clic.
 RIEN N'EST MIS EN COMMUN AU PASSAGE. Regrouper deux modules sous une meme
 question ne les fusionne pas. « Will the detector see it ? » couvre la
 detection ET la suie parce que les deux repondent a la meme preoccupation,
-mais chacun garde son jeu de donnees, ses entrees et sa sortie. Le §8 du
-handoff tient toujours : une interface unifiee n'est pas un modele unifie.
+mais chacun garde son jeu de donnees, ses entrees et sa sortie. La regle
+tient toujours : une interface unifiee n'est pas un modele unifie.
 
 L'ORDRE EST CELUI D'UN INCENDIE. Quels materiaux brulent, comment l'eteindre,
 est-ce vraiment eteint, le detecteur le verra-t-il, la flamme se maintient-elle
@@ -93,8 +93,8 @@ QUESTIONS: dict[str, Question] = {
         kind="predicts",
     ),
     # PSI-142 merite sa propre entree. Le fondre dans la suppression
-    # suggererait qu'on peut mettre 1 g et ISS en commun, ce que le §9 du
-    # handoff interdit. Le reserver au niveau 3 le cacherait. Il reste donc
+    # suggererait qu'on peut mettre 1 g et ISS en commun, ce que les
+    # regimes differents interdisent. Le reserver au niveau 3 le cacherait. Il reste donc
     # visible, et son regime est annonce dans le titre meme.
     "ground": Question(
         key="ground",

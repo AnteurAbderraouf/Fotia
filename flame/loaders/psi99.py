@@ -11,7 +11,7 @@ Source (lecture seule) :
     combustion_science/microgravity_investigation/PSI-99/csv/SAFFIRE-2.csv
 
 PRÉCISION SUR L'HISTOIRE, vérifiée ligne à ligne le 2026-09-22.
-Le handoff résume : « le silicone brûle complètement sur Terre et environ pas
+Le plan initial résume : « le silicone brûle complètement sur Terre et environ pas
 en microgravité ; le SIBAL se propage à 2.1-2.6 mm/s dans les deux ». La
 seconde moitié est inexacte et c'est dommage, parce que la vérité est plus
 intéressante. Le SIBAL n'a pas de vitesse de propagation chiffrée à 1g : la
@@ -24,7 +24,7 @@ La flottabilité entretient et emballe la flamme sur Terre. En microgravité,
 privée de convection naturelle, elle avance régulièrement. Ce n'est pas
 « pareil dans les deux cas », c'est deux régimes de propagation différents.
 
-Le silicone, lui, confirme bien le handoff : à peu près rien en microgravité
+Le silicone, lui, confirme bien le plan initial : à peu près rien en microgravité
 (4 échantillons sur 4), alors qu'à 1g deux brûlent complètement.
 
 PIÈGES DU FICHIER :

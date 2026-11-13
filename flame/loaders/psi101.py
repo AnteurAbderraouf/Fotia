@@ -21,7 +21,7 @@ SAME-R. Autrement dit les résultats de vol de PSI-102 (SAME d'origine) sont
 ici, ce qui confirme qu'il n'y a rien à retélécharger pour PSI-102, et le
 compte de 109 annoncé pour PSI-101 correspond exactement au groupe SAME-R.
 
-CORRECTION AU HANDOFF, vérifiée le 2026-09-22. Le handoff annonce
+CORRECTION AU PLAN INITIAL, vérifiée le 2026-09-22. Le plan initial annonce
 « Label : did the actual ISS smoke detector respond », c'est-à-dire une
 classification. Aucune colonne du classeur n'enregistre un déclenchement.
 Ce qui existe est de deux natures :

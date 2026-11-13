@@ -7,15 +7,15 @@ alcanes et avec ou sans ozone ajouté.
 ATTENTION GRAVITÉ. Ces essais sont faits SUR TERRE, à 1g, sur un brûleur qui
 n'a rien d'un essai ISS. La colonne `gravity` vaut « 1g » et toute mise en
 commun avec les données ISS sans en tenir compte mélangerait deux régimes
-physiques distincts — c'est la mise en garde du §9 du handoff, et c'est ici
+physiques distincts — c'est la mise en garde du plan initial, et c'est ici
 qu'elle s'applique.
 
 Source (lecture seule) :
     combustion_science/ground_investigation/PSI-142/csv/
     PSI data summary Princeton with links.xlsx
 
-CORRECTION AU HANDOFF, vérifiée le 2026-09-22 sur la feuille « data summary »,
-qui est l'index rédigé par Princeton lui-même. Le handoff annonçait
+CORRECTION AU PLAN INITIAL, vérifiée le 2026-09-22 sur la feuille « data summary »,
+qui est l'index rédigé par Princeton lui-même. Le plan initial annonçait
 « data ID 1 : avec ozone, data ID 2 : sans ozone ». C'est l'inverse :
 
     data ID 1   limites d'extinction de flamme froide, SANS ozone   (Fig. 4)

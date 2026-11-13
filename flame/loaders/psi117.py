@@ -15,7 +15,7 @@ Deux conséquences.
 
   1. Chaque fichier mélange des blocs « Expt » (mesures) et « Sim »/« Model »
      (simulations numériques) POUR LES MÊMES CONDITIONS. C'est très exactement
-     la non-indépendance annoncée au §9 du handoff. Une simulation à 1 atm et
+     la non-indépendance annoncée dans le plan initial. Une simulation à 1 atm et
      la mesure à 1 atm ne sont pas deux observations : c'est une observation et
      sa prédiction. Les mettre des deux côtés d'un découpage train/test ferait
      grimper le score sans qu'aucun apprentissage ait eu lieu.
@@ -274,7 +274,7 @@ def load(drop_error_bars: bool = True) -> pd.DataFrame:
     df = df.reindex(columns=ordered)
 
     # NASA classe PSI-117 sous ground_investigation mais le decrit comme une
-    # investigation en vol (handoff §6). On suit la description, pas le
+    # investigation en vol (plan initial). On suit la description, pas le
     # rangement, et on le signale plutot que de trancher en silence.
     # source=None : la provenance varie ligne a ligne (mesure / simulation /
     # barre d'erreur) et c'est toute la valeur de cette table.

@@ -2,7 +2,7 @@
 
 UN MODÈLE PAR MODULE, CHOISI PAR LA MESURE ET NON PAR PRINCIPE.
 
-Le §9 du handoff posait une règle générale — à ce nombre de lignes, préférer
+Une règle générale voulait — à ce nombre de lignes, préférer
 une régression logistique, un ensemble mémoriserait le bruit. Mesurée jeu par
 jeu, cette règle tient pour l'un et pas pour l'autre :
 

@@ -2,7 +2,7 @@
 
 L'AIGUILLEUR, ET POURQUOI IL EXISTE.
 
-Le §8 du handoff a tranché : pas de modèle unique sur toutes les données. Les
+Choix tranché : pas de modèle unique sur toutes les données. Les
 jeux ne partagent ni entrées ni sorties, et fabriquer une colonne « risque »
 commune serait malhonnête.
 

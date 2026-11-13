@@ -27,7 +27,7 @@ LES CINQ CAS :
     10cm microgravite
 
 LE MAILLAGE EST RÉCUPÉRÉ (2026-09-22). Les fichiers `*_sGrid_grid3d.dat`
-étaient notés « FAILED » au §5 du handoff. Le format n'avait rien
+étaient notés « FAILED » dans le plan initial. Le format n'avait rien
 d'irrégulier : trois entiers en première ligne, puis 691 200 coordonnées sur
 une seule ligne. `scripts/extract_mesh.py` les lit et en extrait les deux
 axes, la grille étant séparable. Trois conséquences :
@@ -51,7 +51,7 @@ contresens.
 LES VALEURS NON FINIES SONT UNE INFORMATION, PAS UN TROU.
 La grille de taux de nucléation ne contient que 89 924 valeurs finies sur
 230 400. Le reste était `-inf` avant nettoyage : le logarithme d'un taux nul,
-c'est-à-dire l'absence de nucléation hors du panache. Le handoff insiste et il
+c'est-à-dire l'absence de nucléation hors du panache. Le plan initial insiste et il
 a raison — ne jamais remplacer ces cellules par zéro. « Indéfini » et « nul »
 ne sont pas la même chose, et la proportion de cellules définies est en
 elle-même une mesure de l'étendue du panache. Elle est donc conservée comme

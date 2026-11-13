@@ -2,7 +2,7 @@
 
 CE QUE CETTE COUCHE EST, ET CE QU'ELLE N'EST PAS.
 
-Le §9 du handoff appelle ça la couche de « grounding » : ce qui transforme une
+Le plan initial appelle ça la couche de « grounding » : ce qui transforme une
 probabilité nue en quelque chose qu'un ingénieur accepterait de croire. Le
 mécanisme est simple et il doit le rester.
 

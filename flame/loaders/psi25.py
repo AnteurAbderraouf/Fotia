@@ -8,13 +8,13 @@ campagne.
 Source (lecture seule) :
     combustion_science/microgravity_investigation/PSI-25/csv/BASS-II.csv
 
-CONCLUSION QUI CONTREDIT LE PLAN DU HANDOFF, établie le 2026-09-22.
+CONCLUSION QUI CONTREDIT LE PLAN DU PLAN INITIAL, établie le 2026-09-22.
 Le §8 prévoyait un module « Matériaux : ce matériau brûle-t-il dans
 l'espace ? » entraîné sur PSI-25. Ce n'est pas possible honnêtement : ce jeu
 de données NE PORTE PAS D'ÉTIQUETTE EXPLOITABLE. Deux pistes ont été
 examinées, aucune ne tient.
 
-  1. L'issue en texte libre. Le handoff annonce « 18 lignes le disent
+  1. L'issue en texte libre. Le plan initial annonce « 18 lignes le disent
      explicitement, le reste doit être inféré ». Le compte est bon — une
      vingtaine de cellules « Air display » portent « ext », « blowoff »,
      « no ign at any flow » ou « would not stay lit » — mais les 105 autres ne

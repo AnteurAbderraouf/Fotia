@@ -29,7 +29,9 @@ l'insigne, pas celles de l'ecran. Aucun logo NASA n'est utilise.
 
 from __future__ import annotations
 
+import base64
 import math
+from functools import lru_cache
 from pathlib import Path
 
 import streamlit as st
@@ -103,6 +105,18 @@ def _engine() -> tuple[Engine, int]:
     return Engine(bundle), len(bundle.frame)
 
 
+@lru_cache(maxsize=1)
+def _logo() -> str:
+    """Le logo de l'en-tete, en data URI.
+
+    Le composant n'a pas d'adresse a lui ou servir un fichier : l'image voyage
+    dans le HTML. logo.png est derive de logo/fotialogo.png (rogne, 88 px de
+    haut pour un affichage a 44 px sur ecran dense, ~20 Ko).
+    """
+    data = base64.b64encode((ASSETS / "logo.png").read_bytes()).decode("ascii")
+    return f"data:image/png;base64,{data}"
+
+
 def _component():
     """Enregistre le composant a CHAQUE passage, sans cache.
 
@@ -115,7 +129,7 @@ def _component():
     read = lambda name: (ASSETS / name).read_text(encoding="utf-8")  # noqa: E731
     return st.components.v2.component(
         "fotia_console",
-        html=read("console.html"),
+        html=read("console.html").replace("{{LOGO}}", _logo()),
         css=read("console.css"),
         # flame3d.js declare la classe Flame3D, console.js l'utilise.
         js=read("flame3d.js") + "\n" + read("console.js"),

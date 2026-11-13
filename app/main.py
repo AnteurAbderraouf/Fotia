@@ -33,7 +33,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from flame.dashboard.assistant_panel import render as render_assistant  # noqa: E402
 from flame.dashboard.console import render  # noqa: E402
 
-st.set_page_config(page_title="Fotia", layout="wide", page_icon="\U0001F525",
+# Icone d'onglet : l'embleme du logo sur fond charbon (blanc seul, il
+# disparaitrait sur un onglet clair).
+ICON = Path(__file__).resolve().parent / "static" / "icon.png"
+
+st.set_page_config(page_title="Fotia", layout="wide", page_icon=str(ICON),
                    initial_sidebar_state="collapsed")
 
 # Polices chargees au niveau du document : une @font-face declaree dans le

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logo-banner.png" alt="Fotia" width="640">
+</p>
+
 # Fotia
 
 **Try it live: [nasafotia.streamlit.app](https://nasafotia.streamlit.app)**

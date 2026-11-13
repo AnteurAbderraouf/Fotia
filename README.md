@@ -67,7 +67,7 @@ The page reads top to bottom, in six numbered steps.
 | **03 The flame** | A WebGL2 raymarched droplet and flame, shrinking at the computed rate. Press Space or *Ignite* to burn it; drag to rotate, Ctrl + wheel to zoom, *Air from cursor* to blow on it. Below, the diameter curve over time. Sizes are computed; colour, flicker and the air flow are illustrative. |
 | **04 Prediction** | **Flame extinction** (burns to completion, or extinguishes at a given diameter, with its probability), **burning rate constant K** in mm²/s with its ratio to ISS cabin air, **burn time**, and **confidence**. |
 | **05 Why it matters** | A map of real spacecraft atmospheres (pressure against oxygen) with NASA-STD-3001 crew limits and your setting on it; then tabs of fires and published results that match your setting, each with a quote and a link. |
-| **06 The data behind it** | All 24 combustion investigations on NASA's PSI repository in one table: NASA's own title or objective, platform and dates, how many clean rows came out, and what we found. Filter by *Fully used*, *Partly usable* or *No per-test outcome*. |
+| **06 The data** | All 24 combustion investigations on NASA's PSI repository in one table: NASA's own title or objective, platform and dates, how many clean rows came out, and what we found. Filter by *Fully used*, *Partly usable* or *No per-test outcome*. |
 
 ### The confidence badge
 

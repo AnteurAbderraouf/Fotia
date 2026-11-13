@@ -8,7 +8,7 @@ empilait trop de panneaux sans fil conducteur. Tout l'ecran est maintenant la
 console de flame/dashboard/console.py, lue dans un ordre fixe :
 
     01 Where   02 The air   03 The flame   04 Prediction   05 Why it matters
-    06 The data behind it (le catalogue des 24 investigations, rendu dans la console)
+    06 The data (le catalogue des 24 investigations, rendu dans la console)
 
 et, par-dessus, Ask Fotia : l'assistant (flame/assistant/), en fenetre
 flottante en bas a droite, qui repond avec Gemini en tirant chaque chiffre

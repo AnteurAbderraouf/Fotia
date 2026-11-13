@@ -36,6 +36,7 @@ from pathlib import Path
 
 import streamlit as st
 
+from flame.dashboard import catalogue
 from flame.dashboard.predict import build
 from flame.dashboard.presets import PRESETS, gravity_label, resolve
 from flame.dashboard.registry import MODULES
@@ -297,6 +298,33 @@ def result_payload(c: dict) -> dict:
     return out
 
 
+@lru_cache(maxsize=1)
+def catalogue_payload() -> dict:
+    """Les 24 investigations du depot PSI : ce que NASA en dit, ce qu'on en a tire.
+
+    Scanne une fois par processus : le disque ne change pas pendant que l'app
+    tourne. Le texte NASA (titre, a defaut le premier objectif) reste verbatim.
+    """
+    items = catalogue.scan()
+    rows = []
+    for i in items:
+        period = " to ".join(x for x in (i.nasa.get("start", ""), i.nasa.get("end", "")) if x)
+        platform = i.nasa.get("platform", "").replace("International Space Station (ISS)", "ISS")
+        rows.append({
+            "psi": i.psi,
+            "status": i.verdict,
+            "status_label": catalogue.VERDICT_LABELS[i.verdict],
+            "nasa": i.nasa.get("title") or i.objectives,
+            "is_title": bool(i.nasa.get("title")),
+            "where": "Ground, 1 g" if i.category == "ground" else (
+                platform if platform and platform != "Not Applicable" else "Microgravity"),
+            "period": period,
+            "rows": i.rows,
+            "found": i.assessment,
+        })
+    return {"summary": catalogue.summary(), "rows": rows}
+
+
 def payload(c: dict) -> dict:
     engine, tests = _engine()
     return {
@@ -311,6 +339,7 @@ def payload(c: dict) -> dict:
         "tests": tests,
         "msl1_tests": MSL1_TESTS,
         "result": result_payload(c),
+        "catalogue": catalogue_payload(),
     }
 
 

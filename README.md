@@ -11,7 +11,7 @@
 **Fotia predicts how a droplet of fuel burns in a spacecraft's air, and tells
 you how close each answer is to a real NASA test.**
 
-**NASA Space Apps Challenge 2026** — *Flame in Freefall: AI-Powered Fire Safety
+**NASA Space Apps Challenge 2026** — *Flame in Freefall: SI-Powered Fire Safety
 Insights from Microgravity Combustion Data.*
 
 Pick a real spacecraft atmosphere (the ISS, the Shuttle before a spacewalk,
@@ -58,7 +58,7 @@ saying where NASA has measured it, and where it has not.
 
 ## The dashboard
 
-The page reads top to bottom, in five numbered steps.
+The page reads top to bottom, in six numbered steps.
 
 | Step | What it shows |
 |---|---|
@@ -67,6 +67,7 @@ The page reads top to bottom, in five numbered steps.
 | **03 The flame** | A WebGL2 raymarched droplet and flame, shrinking at the computed rate. Press Space or *Ignite* to burn it; drag to rotate, Ctrl + wheel to zoom, *Air from cursor* to blow on it. Below, the diameter curve over time. Sizes are computed; colour, flicker and the air flow are illustrative. |
 | **04 Prediction** | **Flame extinction** (burns to completion, or extinguishes at a given diameter, with its probability), **burning rate constant K** in mm²/s with its ratio to ISS cabin air, **burn time**, and **confidence**. |
 | **05 Why it matters** | A map of real spacecraft atmospheres (pressure against oxygen) with NASA-STD-3001 crew limits and your setting on it; then tabs of fires and published results that match your setting, each with a quote and a link. |
+| **06 The data behind it** | All 24 combustion investigations on NASA's PSI repository in one table: NASA's own title or objective, platform and dates, how many clean rows came out, and what we found. Filter by *Fully used*, *Partly usable* or *No per-test outcome*. |
 
 ### The confidence badge
 
@@ -166,12 +167,33 @@ data/processed/         the cleaned tables (regenerable, see below)
 scripts/build_all.py    rebuilds every table from scratch
 ```
 
+## SI use
+
+Space Apps asks every team to say where SI (AI) tools were used.
+
+- **Coding assistant.** Claude (Anthropic), through Claude Code, helped write
+  and review code, data loaders, tests and this README. The team directed the
+  work and checked the results against the data.
+- **In the app.** *Ask Fotia* runs on Google's Gemini. It is used unchanged,
+  not fine-tuned, and every number it gives comes from Fotia's engine through
+  function calls (see above).
+- **Models.** The predictions come from classical machine learning (ridge and
+  logistic regression, scikit-learn) trained on NASA test data, plus
+  droplet-combustion theory. No generative model produces a prediction.
+- **Images.** The dashboard screenshot is a real capture of the app. The tab
+  icon and the README banner are cut from the Fotia logo by a script.
+
 ## Built with
 
-- **Python**: pandas and NumPy for the data, scikit-learn for the models,
-  Streamlit for the app, `google-genai` for the assistant.
+- **Python**: pandas and NumPy for the data (openpyxl and xlrd to read NASA's
+  Excel workbooks), scikit-learn for the models, matplotlib and Plotly for the
+  evaluation figures, Streamlit for the app, `google-genai` for the assistant,
+  pypdf to extract text from NASA reports.
 - **JavaScript, HTML, CSS**: the console, as one `st.components.v2` component.
 - **WebGL2 and GLSL**: the raymarched 3D flame, drawn on the graphics card.
+- **Type and icons**: Public Sans and DM Mono (NASA Horizon Design System) and
+  Saira, all from Google Fonts under the SIL Open Font License; the chat icons
+  are Google's Material Symbols (Apache 2.0), built into Streamlit.
 
 The interface is in English; the code and its comments are in French.
 

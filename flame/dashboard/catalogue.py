@@ -141,7 +141,7 @@ def _read_info(folder: Path) -> tuple[dict, str]:
     section = re.search(r"##\s*Objectives\s*\n(.+?)(?=\n##|\Z)", text, re.S)
     if section:
         for line in section.group(1).strip().splitlines():
-            stripped = re.sub(r"^\s*\d+[.)]\s*", "", line).strip()
+            stripped = re.sub(r"^\s*\d+\.?\)?\s*", "", line).strip()
             # Une ligne qui se termine par deux-points annonce une liste, elle
             # ne dit rien elle-meme : on passe a la suivante.
             if len(stripped) > 30 and not stripped.rstrip().endswith(":"):

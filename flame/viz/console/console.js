@@ -98,8 +98,18 @@ function build(root, S) {
     hatch: $("hatch"), vtools: $("vtools"), vhint: $("vhint"), curveEnd: $("curveEnd"),
     answers: $("answers"), map: $("map"), unplaced: $("unplaced"), std: $("std"),
     tabs: $("tabs"), whyText: $("whyText"), cards: $("cards"), legend: $("legend"),
-    foot: $("foot"),
+    foot: $("foot"), catLead: $("catLead"), catFilter: $("catFilter"), catBody: $("catBody"),
   };
+  S.el.catFilter.addEventListener("click", (e) => {
+    const b = e.target.closest("button[data-st]");
+    if (!b) return;
+    S.catStatus = b.dataset.st;
+    renderCatalogue(S);
+  });
+  S.el.catBody.addEventListener("click", (e) => {
+    const t = e.target.closest(".nasa");
+    if (t) t.classList.toggle("open");
+  });
   S.el.legend.innerHTML = Object.entries(BADGE)
     .map(([v, [name, text]]) => `<li>${pill(v, name)}<span>${esc(text)}</span></li>`)
     .join("");
@@ -793,9 +803,41 @@ function renderWhy(S) {
   }).join("");
 }
 
+const CAT_STATUS = [
+  ["all", "All"],
+  ["exploite", "Fully used"],
+  ["partiel", "Partly usable"],
+  ["impasse", "No per-test outcome"],
+];
+
+function renderCatalogue(S) {
+  const cat = S.data.catalogue;
+  if (!cat) return;
+  const s = cat.summary;
+  const used = s.exploitable + s.partiel;
+  S.el.catLead.innerHTML = `NASA&rsquo;s ${link("https://psi.nasa.gov", "Physical Sciences Informatics")} repository holds
+    <b>${s.total}</b> combustion investigations, each in its own format. We read all of them.
+    <b>${used}</b> became clean tables (<b>${s.rows.toLocaleString("en-US")}</b> rows);
+    <b>${s.impasse}</b> hold no per-test outcome, and knowing that saves the next team the search.`;
+  const st = S.catStatus || "all";
+  const count = (k) => k === "all" ? cat.rows.length : cat.rows.filter((r) => r.status === k).length;
+  S.el.catFilter.innerHTML = CAT_STATUS.map(([k, name]) =>
+    `<button role="tab" data-st="${k}" class="${k === st ? "on" : ""}" aria-selected="${k === st}">${esc(name)}<span class="ct">${count(k)}</span></button>`).join("");
+  const rows = st === "all" ? cat.rows : cat.rows.filter((r) => r.status === st);
+  S.el.catBody.innerHTML = rows.map((r) => `
+    <tr>
+      <th scope="row"><span class="psi">${esc(r.psi)}</span><span class="st ${esc(r.status)}">${esc(r.status_label)}</span></th>
+      <td><div class="nasa${r.is_title ? " title" : ""}" title="Click to expand">${esc(r.nasa) || "<span class=\"none\">NASA&rsquo;s page gives no description</span>"}</div></td>
+      <td class="where">${esc(r.where)}${r.period ? `<span>${esc(r.period)}</span>` : ""}</td>
+      <td class="r num">${r.rows == null ? "&ndash;" : r.rows.toLocaleString("en-US")}</td>
+      <td class="found">${esc(r.found)}</td>
+    </tr>`).join("");
+}
+
 function renderFoot(S) {
   S.el.foot.innerHTML = `
     <p>Extinction: learned from ${S.data.tests} NASA FLEX droplet tests flown on the ISS (PSI-69). Burning rate: the same FLEX tests plus ${S.data.msl1_tests} heptane droplets burned on Spacelab MSL-1 in 1997 (${link("https://ntrs.nasa.gov/citations/20040000941", "NASA/TM-2003-212553")}). Beyond all of them, quasi-steady droplet combustion theory.</p>
+    <p>Catalogue: NASA&rsquo;s titles and objectives are quoted from each investigation&rsquo;s PSI page; the status and findings are our own reading of the data.</p>
     <p>Context: fires, spacecraft atmospheres and papers collected by hand from NASA and published sources. Quotes are shown verbatim and are not yet verified against the originals.</p>
     <p>Colours and body typefaces: NASA Horizon Design System. Headings in Saira, after the Fotia logo.</p>`;
 }
@@ -834,5 +876,6 @@ export default function (component) {
   renderAnswers(S);
   renderMap(S);
   renderWhy(S);
+  renderCatalogue(S);
   renderFoot(S);
 }

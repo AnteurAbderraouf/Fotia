@@ -384,6 +384,43 @@
 .card .src { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; font-size: 12px; margin-top: auto; padding-top: 4px; }
 .empty { color: var(--text-3); font-size: 13px; }
 
+/* --- 06 Les donnees : le catalogue des 24 investigations ------------------
+   Le statut reste en gris : vert, orange et rouge sont reserves au verdict
+   de confiance, un statut de jeu de donnees n'est pas un verdict. */
+.cat-lead { margin: 0 0 16px; max-width: 880px; color: var(--text-2); }
+.cat-lead b { font: 500 14px var(--f-mono); color: var(--text); }
+.cat-wrap { overflow-x: auto; }
+.cat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.cat-table thead th {
+  text-align: left; font: 500 12px var(--f-ui); color: var(--text-3);
+  padding: 0 12px 8px 0; border-bottom: 1px solid var(--line); white-space: nowrap;
+}
+.cat-table tbody th, .cat-table td {
+  text-align: left; vertical-align: top; font-weight: 400;
+  padding: 12px 12px 12px 0; border-bottom: 1px solid var(--line);
+}
+.cat-table tbody tr:last-child > * { border-bottom: 0; }
+.cat-table .r { text-align: right; }
+.cat-table .psi { display: block; font: italic 600 15px var(--f-display); color: var(--text); white-space: nowrap; }
+.cat-table .st { display: flex; align-items: center; gap: 6px; margin-top: 4px; font-size: 12px; color: var(--text-3); white-space: nowrap; }
+.cat-table .st::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c60); flex: none; }
+.cat-table .st.exploite { color: var(--text); }
+.cat-table .st.exploite::before { background: var(--text); }
+.cat-table .st.partiel { color: var(--text-2); }
+.cat-table .st.partiel::before { background: var(--c40); }
+.cat-table th[scope="row"] { width: 150px; }
+.cat-table .nasa {
+  min-width: 240px; max-width: 460px; color: var(--text-2); cursor: pointer;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden;
+}
+.cat-table .nasa.title { color: var(--text); }
+.cat-table .nasa.open { -webkit-line-clamp: unset; }
+.cat-table .nasa .none { color: var(--text-3); }
+.cat-table .where { min-width: 160px; color: var(--text-2); }
+.cat-table .where span { display: block; margin-top: 2px; font: 12px var(--f-mono); color: var(--text-3); white-space: nowrap; }
+.cat-table .num { font: 500 13px var(--f-mono); font-variant-numeric: tabular-nums; color: var(--text); white-space: nowrap; }
+.cat-table .found { min-width: 260px; color: var(--text-2); }
+
 /* --- Pied --------------------------------------------------------------- */
 .foot { padding-top: 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--text-3); }
 .foot p { margin: 0 0 4px; }
